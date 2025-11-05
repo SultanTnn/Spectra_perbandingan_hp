@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'register_screen.dart'; // Untuk navigasi ke halaman register
 import 'screen_home.dart';     // Untuk navigasi ke halaman utama
+import 'session.dart';          // <-- REVISI 1: IMPORT "CATATAN" SESSION
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,10 +45,17 @@ class _LoginScreenState extends State<LoginScreen> {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200 && data['status'] == 'success') {
+        
+        // --- INI REVISI UTAMANYA ---
         final String namaLengkap = data['data']['nama_lengkap'];
+        final String userRole = data['data']['role']; // Ambil role dari API
+        
+        // REVISI 2: Simpan role ke "catatan" global
+        UserSession.role = userRole; 
+        // -----------------------------
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Selamat datang, $namaLengkap!')),
+          SnackBar(content: Text('Selamat datang, $namaLengkap! (Role: $userRole)')),
         );
         
         Navigator.pushReplacement(
