@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-// Import halaman home Anda yang sudah kita perbaiki
-import 'screen/screen_home.dart'; 
+import 'screen/login_screen.dart'; // Mengarah ke file login_screen.dart
 
 void main() {
   runApp(const MyApp());
@@ -12,14 +11,15 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Perbandingan HP', // Judul aplikasi Anda
+      title: 'Perbandingan HP',
       theme: ThemeData(
         primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
         useMaterial3: true,
       ),
-      // Atur HomeScreen sebagai halaman utama
-      home: const HomeScreen(),
-      debugShowCheckedModeBanner: false, // Menghilangkan banner "DEBUG"
+      // Halaman pertama yang dibuka adalah LoginScreen
+      home: const LoginScreen(), 
+      debugShowCheckedModeBanner: false, 
     );
   }
 }
