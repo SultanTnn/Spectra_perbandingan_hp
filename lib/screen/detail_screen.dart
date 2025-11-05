@@ -1,33 +1,47 @@
+// detail_screen.dart (Modifikasi)
+
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/edit_phone_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'session.dart'; // <-- IMPORT "CATATAN" KITA
+import 'session.dart';
+import 'edit_phone_screen.dart'; // <-- BARU: Import EditScreen
 
 class DetailScreen extends StatefulWidget {
   final String brand;
   final String id;
-  
-  // Kita tidak perlu 'userRole' di sini lagi
-  const DetailScreen({super.key, required this.brand, required this.id});
+  // Callback untuk me-refresh list di BrandScreen
+  final VoidCallback? refreshCallback;
+
+  const DetailScreen({
+    super.key,
+    required this.brand,
+    required this.id,
+    this.refreshCallback, // Tambahkan parameter baru
+  });
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
 }
 
-class _DetailScreenState extends State<DetailScreen>{
+class _DetailScreenState extends State<DetailScreen> {
   Map<String, dynamic>? data;
   bool loading = true;
   String errorMessage = '';
 
   @override
-  void initState(){ 
-    super.initState(); 
-    fetchDetail(); 
+  void initState() {
+    super.initState();
+    fetchDetail();
   }
 
   Future<void> fetchDetail() async {
-    final url = Uri.parse('http://localhost/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}');
+    // Fungsi fetchDetail tetap sama
+    final url = Uri.parse(
+      'http://localhost/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
+    );
     try {
+      // ... (kode fetchDetail)
       final resp = await http.get(url);
       if (resp.statusCode == 200) {
         final j = json.decode(resp.body);
@@ -52,13 +66,12 @@ class _DetailScreenState extends State<DetailScreen>{
     }
   }
 
-  // --- FUNGSI BARU UNTUK HAPUS DATA ---
   Future<void> _deletePhone() async {
-    // Tampilkan loading
+    // ... (kode _deletePhone tetap sama)
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => Center(child: CircularProgressIndicator()),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
@@ -66,57 +79,55 @@ class _DetailScreenState extends State<DetailScreen>{
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'brand': widget.brand,
-          'id': widget.id,
-        }),
+        body: json.encode({'brand': widget.brand, 'id': widget.id}),
       );
 
       if (!mounted) return;
       final data = json.decode(response.body);
 
-      // Tutup dialog loading
-      Navigator.pop(context); 
+      Navigator.pop(context);
 
       if (data['status'] == 'success') {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Data berhasil dihapus')),
-        );
-        // Kembali ke halaman sebelumnya (BrandScreen)
-        Navigator.pop(context); 
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Data berhasil dihapus')));
+        // Panggil callback refresh list di BrandScreen
+        widget.refreshCallback?.call();
+        Navigator.pop(context); // Kembali ke halaman sebelumnya
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal menghapus: ${data['message']}')),
         );
       }
     } catch (e) {
-      // Tutup dialog loading
-      Navigator.pop(context); 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error koneksi: $e')),
-      );
+      Navigator.pop(context);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error koneksi: $e')));
     }
   }
 
-  // --- FUNGSI BARU UNTUK KONFIRMASI HAPUS ---
   void _showDeleteDialog(BuildContext context) {
+    // ... (kode _showDeleteDialog tetap sama)
     showDialog(
       context: context,
       builder: (BuildContext ctx) {
         return AlertDialog(
-          title: Text('Konfirmasi Hapus'),
-          content: Text('Apakah Anda yakin ingin menghapus data ${data?['nama_model']}?'),
+          title: const Text('Konfirmasi Hapus'),
+          content: Text(
+            'Apakah Anda yakin ingin menghapus data ${data?['nama_model']}?',
+          ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx), // Tutup dialog
-              child: Text('Batal'),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Batal'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.pop(ctx); // Tutup dialog
-                _deletePhone(); // Panggil fungsi hapus
+                Navigator.pop(ctx);
+                _deletePhone();
               },
-              child: Text('Hapus', style: TextStyle(color: Colors.red)),
+              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -124,57 +135,97 @@ class _DetailScreenState extends State<DetailScreen>{
     );
   }
 
+  // --- FUNGSI BARU UNTUK EDIT DATA ---
+  void _goToEditScreen() {
+    if (data == null) return;
+
+    // Navigasi ke EditPhoneScreen dengan mengirim data HP saat ini
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) =>
+            EditPhoneScreen(brand: widget.brand, initialData: data!),
+      ),
+    ).then((result) {
+      // Jika hasil dari EditScreen adalah 'true', berarti data berhasil diubah/dihapus
+      if (result == true) {
+        // Panggil callback refresh list di BrandScreen
+        widget.refreshCallback?.call();
+        // Lakukan fetch detail lagi untuk menampilkan data terbaru di halaman ini
+        fetchDetail();
+      }
+    });
+  }
+  // --- AKHIR FUNGSI BARU UNTUK EDIT DATA ---
+
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(data?['nama_model'] ?? 'Detail'),
-        
-        // --- INI BAGIAN PENTING UNTUK ADMIN ---
+
         actions: [
-          // Tampilkan tombol Hapus HANYA JIKA role adalah 'admin'
-          if (UserSession.role == 'admin')
+          if (UserSession.role == 'admin') ...[
+            // Tombol EDIT
             IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: () {
-                _showDeleteDialog(context); // Panggil konfirmasi
-              },
+              icon: const Icon(Icons.edit),
+              onPressed: data != null ? _goToEditScreen : null,
+              tooltip: 'Edit Data',
             ),
-          // Nanti kita akan tambahkan tombol Edit di sini juga
+            // Tombol Hapus
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: data != null ? () => _showDeleteDialog(context) : null,
+              tooltip: 'Hapus Data',
+            ),
+          ],
         ],
-        // --- AKHIR BAGIAN ADMIN ---
       ),
-      body: loading 
-          ? Center(child: CircularProgressIndicator())
+      body: loading
+          // ... (Widget body detail tetap sama)
+          ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(child: Padding(padding: const EdgeInsets.all(16.0), child: Text(errorMessage)))
-              : SingleChildScrollView(
-                  padding: EdgeInsets.all(16),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(data?['nama_model'] ?? 'Nama tidak ada', style: TextStyle(fontSize:20,fontWeight: FontWeight.bold)),
-                    SizedBox(height:8),
-                    Text('Price: ${data?['price'] ?? '-'}'),
-                    SizedBox(height:12),
-                    Text('Body:\n${data?['body'] ?? '-'}'),
-                    SizedBox(height:12),
-                    Text('Display:\n${data?['display'] ?? '-'}'),
-                    SizedBox(height:12),
-                    Text('Platform:\n${data?['platform'] ?? '-'}'),
-                    SizedBox(height:12),
-                    Text('Memory:\n${data?['memory'] ?? '-'}'),
-                    SizedBox(height:12),
-                    Text('Main Camera:\n${data?['main_camera'] ?? '-'}'),
-                    SizedBox(height:12),
-                    Text('Selfie Camera:\n${data?['selfie_camera'] ?? '-'}'),
-                    SizedBox(height:12),
-                    // Ini 2 kolom barumu, sesuaikan jika namanya beda
-                    Text('Comms:\n${data?['comms'] ?? '-'}'),
-                    SizedBox(height:12),
-                    Text('Features:\n${data?['features'] ?? '-'}'),
-                    SizedBox(height:12),
-                    Text('Battery:\n${data?['battery'] ?? '-'}'),
-                  ]),
-                ),
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(errorMessage),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    data?['nama_model'] ?? 'Nama tidak ada',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text('Price: ${data?['price'] ?? '-'}'),
+                  const SizedBox(height: 12),
+                  Text('Body:\n${data?['body'] ?? '-'}'),
+                  const SizedBox(height: 12),
+                  Text('Display:\n${data?['display'] ?? '-'}'),
+                  const SizedBox(height: 12),
+                  Text('Platform:\n${data?['platform'] ?? '-'}'),
+                  const SizedBox(height: 12),
+                  Text('Memory:\n${data?['memory'] ?? '-'}'),
+                  const SizedBox(height: 12),
+                  Text('Main Camera:\n${data?['main_camera'] ?? '-'}'),
+                  const SizedBox(height: 12),
+                  Text('Selfie Camera:\n${data?['selfie_camera'] ?? '-'}'),
+                  const SizedBox(height: 12),
+                  Text('Comms:\n${data?['comms'] ?? '-'}'),
+                  const SizedBox(height: 12),
+                  Text('Features:\n${data?['features'] ?? '-'}'),
+                  const SizedBox(height: 12),
+                  Text('Battery:\n${data?['battery'] ?? '-'}'),
+                ],
+              ),
+            ),
     );
   }
 }
