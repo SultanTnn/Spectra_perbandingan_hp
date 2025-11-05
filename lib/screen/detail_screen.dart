@@ -1,11 +1,11 @@
-// detail_screen.dart (Modifikasi)
+// detail_screen.dart (Modifikasi dengan Desain Baru)
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/edit_phone_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'session.dart';
-import 'edit_phone_screen.dart'; // <-- BARU: Import EditScreen
+import 'edit_phone_screen.dart'; // Import EditScreen
 
 class DetailScreen extends StatefulWidget {
   final String brand;
@@ -36,12 +36,10 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> fetchDetail() async {
-    // Fungsi fetchDetail tetap sama
     final url = Uri.parse(
       'http://localhost/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
     );
     try {
-      // ... (kode fetchDetail)
       final resp = await http.get(url);
       if (resp.statusCode == 200) {
         final j = json.decode(resp.body);
@@ -67,7 +65,6 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   Future<void> _deletePhone() async {
-    // ... (kode _deletePhone tetap sama)
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -108,7 +105,6 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _showDeleteDialog(BuildContext context) {
-    // ... (kode _showDeleteDialog tetap sama)
     showDialog(
       context: context,
       builder: (BuildContext ctx) {
@@ -135,7 +131,6 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  // --- FUNGSI BARU UNTUK EDIT DATA ---
   void _goToEditScreen() {
     if (data == null) return;
 
@@ -156,13 +151,50 @@ class _DetailScreenState extends State<DetailScreen> {
       }
     });
   }
-  // --- AKHIR FUNGSI BARU UNTUK EDIT DATA ---
+
+  // Helper untuk membuat baris detail yang seragam
+  Widget _buildDetailRow(String title, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$title:',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.blue.shade700,
+              fontSize: 16,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value.toString(),
+            style: const TextStyle(
+              fontSize: 15,
+            ),
+          ),
+          const Divider(height: 16),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Colors.blue.shade700;
+    final secondaryColor = Colors.blue.shade300;
+
     return Scaffold(
+      extendBodyBehindAppBar: true, // Agar body bisa di belakang AppBar
       appBar: AppBar(
-        title: Text(data?['nama_model'] ?? 'Detail'),
+        title: Text(
+          data?['nama_model'] ?? 'Detail',
+          style: const TextStyle(color: Colors.white),
+        ),
+        backgroundColor: Colors.transparent, // Transparan agar gradient terlihat
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
 
         actions: [
           if (UserSession.role == 'admin') ...[
@@ -175,57 +207,88 @@ class _DetailScreenState extends State<DetailScreen> {
             // Tombol Hapus
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: data != null ? () => _showDeleteDialog(context) : null,
+              onPressed:
+                  data != null ? () => _showDeleteDialog(context) : null,
               tooltip: 'Hapus Data',
             ),
           ],
         ],
       ),
-      body: loading
-          // ... (Widget body detail tetap sama)
-          ? const Center(child: CircularProgressIndicator())
-          : errorMessage.isNotEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(errorMessage),
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    data?['nama_model'] ?? 'Nama tidak ada',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [secondaryColor, primaryColor],
+          ),
+        ),
+        child: loading
+            ? const Center(child: CircularProgressIndicator(color: Colors.white))
+            : errorMessage.isNotEmpty
+                ? Center(
+                    child: Text(
+                      errorMessage,
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    ),
+                  )
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.only(top: 100, left: 24, right: 24, bottom: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Card Utama untuk Detail
+                        Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 15,
+                                offset: Offset(0, 10),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data?['nama_model'] ?? 'Nama tidak ada',
+                                style: TextStyle(
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.bold,
+                                  color: primaryColor,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Brand: ${widget.brand}',
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const Divider(height: 30, thickness: 2),
+                              
+                              _buildDetailRow('Harga', data?['price'] ?? '-'),
+                              _buildDetailRow('Body', data?['body'] ?? '-'),
+                              _buildDetailRow('Display', data?['display'] ?? '-'),
+                              _buildDetailRow('Platform', data?['platform'] ?? '-'),
+                              _buildDetailRow('Memory', data?['memory'] ?? '-'),
+                              _buildDetailRow('Main Camera', data?['main_camera'] ?? '-'),
+                              _buildDetailRow('Selfie Camera', data?['selfie_camera'] ?? '-'),
+                              _buildDetailRow('Comms', data?['comms'] ?? '-'),
+                              _buildDetailRow('Features', data?['features'] ?? '-'),
+                              _buildDetailRow('Battery', data?['battery'] ?? '-'),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text('Price: ${data?['price'] ?? '-'}'),
-                  const SizedBox(height: 12),
-                  Text('Body:\n${data?['body'] ?? '-'}'),
-                  const SizedBox(height: 12),
-                  Text('Display:\n${data?['display'] ?? '-'}'),
-                  const SizedBox(height: 12),
-                  Text('Platform:\n${data?['platform'] ?? '-'}'),
-                  const SizedBox(height: 12),
-                  Text('Memory:\n${data?['memory'] ?? '-'}'),
-                  const SizedBox(height: 12),
-                  Text('Main Camera:\n${data?['main_camera'] ?? '-'}'),
-                  const SizedBox(height: 12),
-                  Text('Selfie Camera:\n${data?['selfie_camera'] ?? '-'}'),
-                  const SizedBox(height: 12),
-                  Text('Comms:\n${data?['comms'] ?? '-'}'),
-                  const SizedBox(height: 12),
-                  Text('Features:\n${data?['features'] ?? '-'}'),
-                  const SizedBox(height: 12),
-                  Text('Battery:\n${data?['battery'] ?? '-'}'),
-                ],
-              ),
-            ),
+      ),
     );
   }
 }
