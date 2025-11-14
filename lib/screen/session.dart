@@ -1,8 +1,18 @@
-// File ini berfungsi sebagai "catatan" global
-// untuk menyimpan role user yang sedang login.
+// session.dart (Ganti semua isinya)
 
 class UserSession {
-  // 'static' berarti variabel ini bisa diakses dari mana saja
-  // tanpa harus membuat object UserSession baru.
-  static String? role; 
+  static String? id;
+  static String? username;
+  static String? namaLengkap;
+  static String? role;
+  static String? profileImageUrl; // <-- Tambahan baru
+
+  // Fungsi untuk membersihkan session saat logout
+  static void clearSession() {
+    id = null;
+    username = null;
+    namaLengkap = null;
+    profileImageUrl = null; // <-- Tambahan baru
+    role = null;
+  }
 }

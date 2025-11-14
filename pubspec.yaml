@@ -11,10 +11,14 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^1.0.8
+  cupertino_icons: ^1.0.6
 
   # INI YANG SAYA TAMBAHKAN:
   http: ^1.2.1 
+  image_picker: ^1.0.7
+  google_fonts: ^6.2.1
+
+
 
 dev_dependencies:
   flutter_test:

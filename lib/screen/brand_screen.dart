@@ -8,8 +8,6 @@ import 'dart:convert';
 import 'detail_screen.dart';
 import 'session.dart';
 import 'create_phone_screen.dart';
-import 'compare_screen.dart';
-import 'comparison_manager.dart'; // <-- BARU: Import Manager
 
 class BrandScreen extends StatefulWidget {
   final String brand;

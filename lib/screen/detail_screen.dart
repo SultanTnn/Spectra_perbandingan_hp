@@ -5,7 +5,7 @@ import 'package:flutter_application_1/edit_phone_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'session.dart';
-import 'edit_phone_screen.dart'; // Import EditScreen
+
 
 class DetailScreen extends StatefulWidget {
   final String brand;

@@ -13,8 +13,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _namaController = TextEditingController();
   final _usernameController = TextEditingController();
+  final _emailController = TextEditingController(); // <-- BARU
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+
+  // --- TAMBAHAN: State untuk ikon mata ---
+  bool _isPasswordVisible = false;
+  // ------------------------------------
+
+  @override
+  void dispose() {
+    _namaController.dispose();
+    _usernameController.dispose();
+    _emailController.dispose(); // <-- BARU
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) {
@@ -33,6 +47,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         body: json.encode({
           'nama_lengkap': _namaController.text,
           'username': _usernameController.text,
+          'email': _emailController.text, // <-- BARU
           'password': _passwordController.text,
         }),
       );
@@ -43,7 +58,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
       if (response.statusCode == 200 && data['status'] == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Registrasi berhasil! Silakan login.'),
             backgroundColor: Colors.green,
           ),
@@ -95,11 +110,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
+                      boxShadow: const [
                         BoxShadow(
                           color: Colors.black26,
                           blurRadius: 15,
@@ -109,31 +124,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     child: Column(
                       children: [
-                        Icon(
-                          Icons.app_registration,
-                          size: 80,
-                          color: Colors.blue,
-                        ),
-                        SizedBox(height: 24),
+                        // --- MODIFIKASI: Judul Aplikasi ---
                         Text(
-                          'Buat Akun Baru',
+                          'SPECTRA',
                           style: TextStyle(
-                            fontSize: 32,
+                            fontSize: 48,
                             fontWeight: FontWeight.bold,
                             color: Colors.blue.shade700,
+                            height: 1.2,
                           ),
-                          textAlign: TextAlign.center,
                         ),
                         Text(
-                          'Lengkapi data diri Anda',
+                          'Perbandingan Spesifikasi HP',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey[600],
                             fontWeight: FontWeight.w500,
                           ),
+                        ),
+                        const SizedBox(height: 24),
+                        Text(
+                          'Buat Akun Baru Anda',
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w600,
+                          ),
                           textAlign: TextAlign.center,
                         ),
-                        SizedBox(height: 32),
+                        // --- AKHIR MODIFIKASI ---
+
+                        const SizedBox(height: 32),
+
+                        // --- Field Nama Lengkap ---
                         TextFormField(
                           controller: _namaController,
                           decoration: InputDecoration(
@@ -142,7 +165,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            prefixIcon: Icon(Icons.person, color: Colors.blue),
+                            prefixIcon: const Icon(Icons.person, color: Colors.blue),
                             filled: true,
                             fillColor: Colors.grey[100],
                           ),
@@ -153,7 +176,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
+
+                        // --- Field Username ---
                         TextFormField(
                           controller: _usernameController,
                           decoration: InputDecoration(
@@ -162,7 +187,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            prefixIcon: Icon(Icons.account_circle, color: Colors.blue),
+                            prefixIcon: const Icon(Icons.account_circle, color: Colors.blue),
                             filled: true,
                             fillColor: Colors.grey[100],
                           ),
@@ -173,19 +198,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
+
+                        // --- FIELD EMAIL BARU ---
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: InputDecoration(
+                            labelText: 'Email',
+                            hintText: 'Masukkan email Anda',
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            prefixIcon: const Icon(Icons.email, color: Colors.blue),
+                            filled: true,
+                            fillColor: Colors.grey[100],
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Email tidak boleh kosong';
+                            }
+                            // Validasi email sederhana
+                            if (!value.contains('@') || !value.contains('.')) {
+                              return 'Email tidak valid';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // --- MODIFIKASI: Field Password + Ikon Mata ---
                         TextFormField(
                           controller: _passwordController,
-                          obscureText: true,
+                          obscureText: !_isPasswordVisible,
                           decoration: InputDecoration(
                             labelText: 'Password',
                             hintText: 'Masukkan password Anda',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            prefixIcon: Icon(Icons.lock, color: Colors.blue),
+                            prefixIcon: const Icon(Icons.lock, color: Colors.blue),
                             filled: true,
                             fillColor: Colors.grey[100],
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
+                                color: Colors.grey,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
+                            ),
                           ),
                           validator: (value) {
                             if (value == null || value.isEmpty) {
@@ -197,20 +264,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             return null;
                           },
                         ),
-                        SizedBox(height: 24),
+                        // --- AKHIR MODIFIKASI ---
+
+                        const SizedBox(height: 24),
                         ElevatedButton(
                           onPressed: _isLoading ? null : _register,
                           style: ElevatedButton.styleFrom(
-                            padding: EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             backgroundColor: Colors.blue.shade600,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            minimumSize: Size(double.infinity, 50),
+                            minimumSize: const Size(double.infinity, 50),
                           ),
                           child: _isLoading
-                              ? CircularProgressIndicator(color: Colors.white)
-                              : Text(
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text(
                                   'Daftar',
                                   style: TextStyle(
                                     fontSize: 18,
@@ -218,7 +287,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   ),
                                 ),
                         ),
-                        SizedBox(height: 16),
+                        const SizedBox(height: 16),
                         TextButton(
                           onPressed: () {
                             Navigator.pop(context);
@@ -228,7 +297,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
+                            children: const [
                               Icon(Icons.arrow_back, size: 16),
                               SizedBox(width: 8),
                               Text(
@@ -251,10 +320,5 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ),
     );
-            
-          
-        
-      
-    
   }
 }
