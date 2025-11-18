@@ -1,24 +1,24 @@
 name: flutter_application_1
 description: "A new Flutter project."
-publish_to: 'none' 
+publish_to: 'none'
 
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.9.2 <4.0.0' # Saya perbaiki sedikit SDK constraint-nya agar lebih standar
+  sdk: '>=3.9.2 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
   cupertino_icons: ^1.0.6
-
-  # INI YANG SAYA TAMBAHKAN:
-  http: ^1.2.1 
+  
+  # Paket tambahan
+  http: ^1.2.1
   image_picker: ^1.0.7
   google_fonts: ^6.2.1
-
-
+  shimmer: ^3.0.0
+  mesh_gradient: 1.3.8  # <--- DITAMBAHKAN UNTUK BACKGROUND BERGERAK
 
 dev_dependencies:
   flutter_test:

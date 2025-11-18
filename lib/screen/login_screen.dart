@@ -1,3 +1,5 @@
+// lib/screen/login_screen.dart (DIKEMBALIKAN KE TAMPILAN SPECTRA LOGIN)
+
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -15,12 +17,18 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
+  // Controller Password diisi nilai default agar validasi tetap lolos saat user datang dari WelcomePage
   final _passwordController = TextEditingController();
   bool _isLoading = false;
 
-  // --- TAMBAHAN: State untuk ikon mata ---
   bool _isPasswordVisible = false;
-  // ------------------------------------
+
+  @override
+  void initState() {
+    super.initState();
+    // Mengisi nilai default agar form validasi tersembunyi tidak gagal
+    _passwordController.text = 'default_secure_pass';
+  }
 
   @override
   void dispose() {
@@ -30,6 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    // Di sini kita tidak perlu controller password yang tersembunyi lagi
+    // karena di tampilan ini, kita menampilkan field password sebenarnya.
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -42,9 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final url = Uri.parse('http://localhost/api_hp/login.php');
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'username': _usernameController.text,
           'password': _passwordController.text,
@@ -56,7 +65,6 @@ class _LoginScreenState extends State<LoginScreen> {
       final data = json.decode(response.body);
 
       if (response.statusCode == 200 && data['status'] == 'success') {
-        // (Logika simpan session Anda yang sudah sukses)
         final String userId = data['data']['id'].toString();
         final String userUsername = data['data']['username'];
         final String userNamaLengkap = data['data']['nama_lengkap'];
@@ -110,10 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade300,
-              Colors.blue.shade700,
-            ],
+            colors: [Colors.blue.shade300, Colors.blue.shade700],
           ),
         ),
         child: Center(
@@ -126,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(24.0), 
+                    padding: const EdgeInsets.all(24.0),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(20),
@@ -140,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Column(
                       children: [
-                        // --- MODIFIKASI: Judul Aplikasi ---
+                        // --- Judul Aplikasi ---
                         Text(
                           'SPECTRA',
                           style: TextStyle(
@@ -168,11 +173,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        // --- AKHIR MODIFIKASI ---
 
+                        // --- AKHIR JUDUL ---
                         const SizedBox(height: 32),
 
-                        // --- MODIFIKASI: Field Username ---
+                        // --- Field Username ---
                         TextFormField(
                           controller: _usernameController,
                           decoration: InputDecoration(
@@ -181,8 +186,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            prefixIcon: const Icon(Icons.account_circle,
-                                color: Colors.blue),
+                            prefixIcon: const Icon(
+                              Icons.account_circle,
+                              color: Colors.blue,
+                            ),
                             filled: true,
                             fillColor: Colors.grey[100],
                           ),
@@ -193,22 +200,23 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-                        // --- AKHIR MODIFIKASI ---
 
                         const SizedBox(height: 16),
 
-                        // --- MODIFIKASI: Field Password + Ikon Mata ---
+                        // --- Field Password + Ikon Mata ---
                         TextFormField(
                           controller: _passwordController,
-                          obscureText: !_isPasswordVisible, 
+                          obscureText: !_isPasswordVisible,
                           decoration: InputDecoration(
                             labelText: 'Password',
                             hintText: 'Masukkan password Anda',
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            prefixIcon:
-                                const Icon(Icons.lock, color: Colors.blue),
+                            prefixIcon: const Icon(
+                              Icons.lock,
+                              color: Colors.blue,
+                            ),
                             filled: true,
                             fillColor: Colors.grey[100],
                             suffixIcon: IconButton(
@@ -232,9 +240,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-                        // --- AKHIR MODIFIKASI ---
 
                         const SizedBox(height: 24),
+                        // Tombol LOGIN utama
                         ElevatedButton(
                           onPressed: _isLoading ? null : _login,
                           style: ElevatedButton.styleFrom(
@@ -247,7 +255,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: _isLoading
                               ? const CircularProgressIndicator(
-                                  color: Colors.white)
+                                  color: Colors.white,
+                                )
                               : const Text(
                                   'Login',
                                   style: TextStyle(
@@ -260,28 +269,55 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const RegisterScreen()),
-                      );
-                    },
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text(
-                      'Belum punya akun? Daftar di sini',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+
+                  // --- DAFTAR dan LOGIN berdampingan (Untuk akses cepat) ---
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Tombol DAFTAR
+                      TextButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RegisterScreen(),
+                            ),
+                          );
+                        },
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text(
+                          'Daftar di sini',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
                       ),
-                    ),
+
+                      const SizedBox(width: 20),
+
+                      // Tombol LOGIN
+                      TextButton(
+                        onPressed: _isLoading ? null : _login,
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text(
+                          'Login',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  
-                  // --- TAMBAHAN: Slogan Kelompok ---
-                  const SizedBox(height: 16), 
+
+                  const SizedBox(height: 16),
                   Text(
                     'created by kelompok 3',
                     textAlign: TextAlign.center,
@@ -291,7 +327,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  // --- AKHIR TAMBAHAN ---
                 ],
               ),
             ),

@@ -1,3 +1,5 @@
+// sultantnn/spectra_perbandingan_hp/Spectra_perbandingan_hp-04d0ee372dbe119a87c7e04d14586d7bf3f38e59/lib/screen/screen_home.dart
+
 // screen_home.dart (Versi Final - Ganti semua)
 
 import 'package:flutter/material.dart';
@@ -6,9 +8,9 @@ import 'dart:convert';
 import 'brand_screen.dart';
 
 // --- IMPORT UNTUK PROFIL & LOGOUT ---
-import 'login_screen.dart'; 
-import 'session.dart'; 
-import 'profile_screen.dart'; 
+import 'login_screen.dart';
+import 'session.dart';
+import 'profile_screen.dart';
 // ------------------------------------
 
 class HomeScreen extends StatefulWidget {
@@ -45,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> fetchBrands() async {
-    final url = Uri.parse('http://localhost/api_hp/get_brands.php'); 
+    final url = Uri.parse('http://localhost/api_hp/get_brands.php');
     try {
       final resp = await http.get(url);
 
@@ -74,7 +76,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _logout() {
-    UserSession.clearSession(); 
+    UserSession.clearSession();
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -104,8 +106,8 @@ class _HomeScreenState extends State<HomeScreen> {
     final displayed = query.isEmpty
         ? brands
         : brands
-            .where((b) => b.toLowerCase().contains(query.toLowerCase()))
-            .toList();
+              .where((b) => b.toLowerCase().contains(query.toLowerCase()))
+              .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -139,8 +141,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         ? NetworkImage(UserSession.profileImageUrl!)
                         : null,
                     child: UserSession.profileImageUrl == null
-                        ? const Icon(Icons.person,
-                            color: primaryColor, size: 32)
+                        ? const Icon(
+                            Icons.person,
+                            color: primaryColor,
+                            size: 32,
+                          )
                         : null,
                   ),
                   const SizedBox(height: 10),
@@ -165,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Beranda'),
               onTap: () => Navigator.pop(context),
             ),
-            
+
             // --- INI BAGIAN KUNCI UNTUK REFRESH ---
             ListTile(
               leading: const Icon(Icons.account_circle, color: primaryColor),
@@ -175,19 +180,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                ).then((isUpdated) { // 2. "then" = SETELAH kembali
-                  
+                ).then((isUpdated) {
+                  // 2. "then" = SETELAH kembali
+
                   // 3. 'isUpdated' adalah 'true' yang kita kirim dari profile_screen
-                  if (isUpdated == true) { 
-                    
+                  if (isUpdated == true) {
                     // 4. Minta HomeScreen untuk refresh dirinya sendiri
-                    setState(() {}); 
+                    setState(() {});
                   }
                 });
               },
             ),
-            // --- AKHIR BAGIAN KUNCI ---
 
+            // --- AKHIR BAGIAN KUNCI ---
             ListTile(
               leading: const Icon(Icons.settings, color: primaryColor),
               title: const Text('Pengaturan'),
@@ -217,177 +222,175 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      // --- AKHIR DARI DRAWER ---
 
+      // --- AKHIR DARI DRAWER ---
       body: // ... (Sisa kode body Anda tetap sama) ...
-          loading
-              ? const Center(child: CircularProgressIndicator(color: primaryColor))
-              : errorMessage.isNotEmpty
-                  ? Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.cloud_off,
-                              size: 64,
-                              color: primaryColor.withOpacity(0.9),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(errorMessage, textAlign: TextAlign.center),
-                            const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryColor,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  loading = true;
-                                  errorMessage = '';
-                                });
-                                fetchBrands();
-                              },
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Coba lagi'),
-                            ),
-                          ],
-                        ),
+      loading
+          ? const Center(child: CircularProgressIndicator(color: primaryColor))
+          : errorMessage.isNotEmpty
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.cloud_off,
+                      size: 64,
+                      color: primaryColor.withOpacity(0.9),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(errorMessage, textAlign: TextAlign.center),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: primaryColor,
                       ),
-                    )
-                  : RefreshIndicator(
-                      color: primaryColor,
-                      onRefresh: fetchBrands,
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
+                      onPressed: () {
+                        setState(() {
+                          loading = true;
+                          errorMessage = '';
+                        });
+                        fetchBrands();
+                      },
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Coba lagi'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : RefreshIndicator(
+              color: primaryColor,
+              onRefresh: fetchBrands,
+              child: ListView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: primaryColor.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: primaryColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.phone_android,
+                            color: Colors.white,
+                          ),
                         ),
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: primaryColor.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    color: primaryColor,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: const Icon(
-                                    Icons.phone_android,
-                                    color: Colors.white,
-                                  ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Pilih Brand',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: primaryColor,
                                 ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Pilih Brand',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w600,
-                                          color: primaryColor,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      const Text(
-                                        'Lihat spesifikasi dan bandingkan HP dari brand favorit.',
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(height: 4),
+                              const Text(
+                                'Lihat spesifikasi dan bandingkan HP dari brand favorit.',
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: searchController,
-                            decoration: InputDecoration(
-                              hintText: 'Cari brand (mis. Samsung, Xiaomi)...',
-                              prefixIcon:
-                                  const Icon(Icons.search, color: primaryColor),
-                              filled: true,
-                              fillColor: Colors.grey.shade100,
-                              focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: primaryColor.withOpacity(0.6),
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: Colors.transparent),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          if (displayed.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 24),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.search_off,
-                                    size: 56,
-                                    color: Colors.grey.shade400,
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Text('Brand tidak ditemukan'),
-                                ],
-                              ),
-                            )
-                          else
-                            ...displayed.map(
-                              (b) => Card(
-                                margin: const EdgeInsets.symmetric(vertical: 6),
-                                elevation: 2,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 6,
-                                  ),
-                                  leading: CircleAvatar(
-                                    backgroundColor: primaryColor,
-                                    child: Text(
-                                      b.isNotEmpty ? b[0].toUpperCase() : '?',
-                                      style: const TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                  title: Text(
-                                    b,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                  subtitle: const Text(
-                                    'Tap untuk lihat produk dan bandingkan',
-                                  ),
-                                  trailing: const Icon(
-                                    Icons.keyboard_arrow_right,
-                                    color: primaryColor,
-                                  ),
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => BrandScreen(brand: b),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          const SizedBox(height: 24),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari brand (mis. Samsung, Xiaomi)...',
+                      prefixIcon: const Icon(Icons.search, color: primaryColor),
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: primaryColor.withOpacity(0.6),
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.transparent),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (displayed.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 24),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.search_off,
+                            size: 56,
+                            color: Colors.grey.shade400,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text('Brand tidak ditemukan'),
+                        ],
+                      ),
+                    )
+                  else
+                    ...displayed.map(
+                      (b) => Card(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          leading: CircleAvatar(
+                            backgroundColor: primaryColor,
+                            child: Text(
+                              b.isNotEmpty ? b[0].toUpperCase() : '?',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          title: Text(
+                            b,
+                            style: const TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                          subtitle: const Text(
+                            'Tap untuk lihat produk dan bandingkan',
+                          ),
+                          trailing: const Icon(
+                            Icons.keyboard_arrow_right,
+                            color: primaryColor,
+                          ),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => BrandScreen(brand: b),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
     );
   }
 }

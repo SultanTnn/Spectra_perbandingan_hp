@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screen/login_screen.dart'; // Mengarah ke file login_screen.dart
+import 'screen/welcome_page.dart'; // Mengarah ke halaman WelcomePage
 
 void main() {
   runApp(const MyApp());
@@ -17,9 +17,9 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
         useMaterial3: true,
       ),
-      // Halaman pertama yang dibuka adalah LoginScreen
-      home: const LoginScreen(), 
-      debugShowCheckedModeBanner: false, 
+      // Halaman pertama yang dibuka adalah WelcomePage
+      home: const WelcomePage(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }
