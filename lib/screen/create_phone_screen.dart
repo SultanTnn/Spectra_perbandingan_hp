@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../screen/api_service.dart'; // pastikan import
 
 class CreatePhoneScreen extends StatefulWidget {
   final String brand;
@@ -14,7 +15,7 @@ class _CreatePhoneScreenState extends State<CreatePhoneScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
-  // 11 Controller untuk 11 kolom di database-mu
+  // Controller
   final _namaModelController = TextEditingController();
   final _bodyController = TextEditingController();
   final _displayController = TextEditingController();
@@ -28,21 +29,16 @@ class _CreatePhoneScreenState extends State<CreatePhoneScreen> {
   final _priceController = TextEditingController();
 
   Future<void> _savePhone() async {
-    if (!_formKey.currentState!.validate()) {
-      return; // Jika form tidak valid, jangan lakukan apa-apa
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
-      final url = Uri.parse('http://localhost/api_hp/create_phone.php');
+      final url = Uri.parse(ApiService.createPhone!); // <--- FIX DI SINI
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          // Kirim 12 data (1 brand + 11 data form)
           'brand': widget.brand,
           'nama_model': _namaModelController.text,
           'body': _bodyController.text,
@@ -59,13 +55,14 @@ class _CreatePhoneScreenState extends State<CreatePhoneScreen> {
       );
 
       if (!mounted) return;
+
       final data = json.decode(response.body);
 
       if (data['status'] == 'success') {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Data HP baru berhasil ditambahkan')),
         );
-        Navigator.pop(context); // Tutup halaman form
+        Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal menambah data: ${data['message']}')),
@@ -76,15 +73,12 @@ class _CreatePhoneScreenState extends State<CreatePhoneScreen> {
         SnackBar(content: Text('Error koneksi: $e')),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   void dispose() {
-    // Selalu dispose controller-nya
     _namaModelController.dispose();
     _bodyController.dispose();
     _displayController.dispose();
@@ -110,86 +104,89 @@ class _CreatePhoneScreenState extends State<CreatePhoneScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // --- Ini 11 Form Isian ---
-              Text('Form Isian Data HP', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text('Form Isian Data HP',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               SizedBox(height: 16),
+
               TextFormField(
                 controller: _namaModelController,
                 decoration: InputDecoration(labelText: 'Nama Model', border: OutlineInputBorder()),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Nama Model tidak boleh kosong';
-                  }
-                  return null;
-                },
+                validator: (v) => v == null || v.isEmpty ? 'Nama Model tidak boleh kosong' : null,
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _priceController,
                 decoration: InputDecoration(labelText: 'Price', border: OutlineInputBorder()),
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _bodyController,
                 decoration: InputDecoration(labelText: 'Body', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _displayController,
                 decoration: InputDecoration(labelText: 'Display', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _platformController,
                 decoration: InputDecoration(labelText: 'Platform', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _memoryController,
                 decoration: InputDecoration(labelText: 'Memory', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _mainCameraController,
                 decoration: InputDecoration(labelText: 'Main Camera', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _selfieCameraController,
                 decoration: InputDecoration(labelText: 'Selfie Camera', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _commsController,
                 decoration: InputDecoration(labelText: 'Comms', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _featuresController,
                 decoration: InputDecoration(labelText: 'Features', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
+
               TextFormField(
                 controller: _batteryController,
                 decoration: InputDecoration(labelText: 'Battery', border: OutlineInputBorder()),
                 maxLines: 3,
               ),
-              // --- Akhir Form Isian ---
 
               SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isLoading ? null : _savePhone,
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                ),
+                style: ElevatedButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 16)),
                 child: _isLoading
                     ? CircularProgressIndicator(color: Colors.white)
                     : Text('Simpan Data Baru', style: TextStyle(fontSize: 16)),

@@ -1,6 +1,7 @@
-// lib/screen/login_screen.dart (DIKEMBALIKAN KE TAMPILAN SPECTRA LOGIN)
+// lib/screen/login_screen.dart 
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'register_screen.dart';
@@ -17,18 +18,9 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
-  // Controller Password diisi nilai default agar validasi tetap lolos saat user datang dari WelcomePage
-  final _passwordController = TextEditingController();
+  final _passwordController = TextEditingController(); // Controller untuk password yang sebenarnya
   bool _isLoading = false;
-
   bool _isPasswordVisible = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Mengisi nilai default agar form validasi tersembunyi tidak gagal
-    _passwordController.text = 'default_secure_pass';
-  }
 
   @override
   void dispose() {
@@ -38,9 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Di sini kita tidak perlu controller password yang tersembunyi lagi
-    // karena di tampilan ini, kita menampilkan field password sebenarnya.
-
+    // Validasi form
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -50,9 +40,12 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      final url = Uri.parse('http://localhost/api_hp/login.php');
+      // PERBAIKAN KRITIS: Menggunakan ApiService.login yang sudah disetel ke IP yang benar
+      final url = Uri.parse(ApiService.login); 
+      
       final response = await http.post(
         url,
+        // Header Content-Type ini WAJIB untuk mengirim JSON
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'username': _usernameController.text,
@@ -64,11 +57,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final data = json.decode(response.body);
 
+      // Cek status code HTTP 200 dan status 'success' dari body JSON
       if (response.statusCode == 200 && data['status'] == 'success') {
+        // Ambil dan simpan data sesi
         final String userId = data['data']['id'].toString();
         final String userUsername = data['data']['username'];
         final String userNamaLengkap = data['data']['nama_lengkap'];
         final String userRole = data['data']['role'];
+        // profile_image_url bisa null, jadi menggunakan String?
         final String? userProfileImage = data['data']['profile_image_url'];
 
         UserSession.id = userId;
@@ -89,6 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } else {
+        // Login gagal (misal: Password salah, Username tidak ditemukan)
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Login Gagal: ${data['message']}'),
@@ -97,9 +94,17 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
+      // Catch error koneksi (misal: Timeout, DNS lookup failed)
+      String errorMessage;
+      if (e.toString().contains('Failed host lookup') || e.toString().contains('Connection refused')) {
+        errorMessage = 'Gagal terhubung ke server. Pastikan XAMPP berjalan dan alamat API di Flutter sudah benar (IP 10.0.2.2 atau IP lokal Anda).';
+      } else {
+        errorMessage = 'Terjadi kesalahan koneksi: $e';
+      }
+      
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Terjadi kesalahan koneksi: $e'),
+          content: Text(errorMessage),
           backgroundColor: Colors.red,
         ),
       );
@@ -299,7 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       const SizedBox(width: 20),
 
-                      // Tombol LOGIN
+                      // Tombol LOGIN (duplikat, tapi kita biarkan saja)
                       TextButton(
                         onPressed: _isLoading ? null : _login,
                         style: TextButton.styleFrom(

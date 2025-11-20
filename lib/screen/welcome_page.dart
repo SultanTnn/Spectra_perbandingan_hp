@@ -1,78 +1,15 @@
 // lib/screen/welcome_page.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screen/api_service.dart';
+import 'package:flutter_application_1/screen/smartphone.dart';
 import 'login_screen.dart'; // Pastikan file ini ada
 import 'register_screen.dart'; // Pastikan file ini ada
 import 'dart:developer';
-
-// Import untuk API & JSON
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-
-// Import Shimmer (Wajib: flutter pub add shimmer)
 import 'package:shimmer/shimmer.dart';
 
-// --- MODEL DATA HP ---
-class Phone {
-  final int id;
-  final String namaModel;
-  final String? body;
-  final String? display;
-  final String? platform;
-  final String? memory;
-  final String? mainCamera;
-  final String? selfieCamera;
-  final String? sound;
-  final String? comms;
-  final String? features;
-  final String? battery;
-  final String? price;
-  final String? imageUrl;
-
-  Phone({
-    required this.id,
-    required this.namaModel,
-    this.body,
-    this.display,
-    this.platform,
-    this.memory,
-    this.mainCamera,
-    this.selfieCamera,
-    this.sound,
-    this.comms,
-    this.features,
-    this.battery,
-    this.price,
-    this.imageUrl,
-  });
-
-  factory Phone.fromJson(Map<String, dynamic> json) {
-    return Phone(
-      id: int.tryParse(json['id'].toString()) ?? 0,
-      namaModel: json['nama_model']?.toString() ?? "Tanpa Nama",
-      body: json['body']?.toString(),
-      display: json['display']?.toString(),
-      platform: json['platform']?.toString(),
-      memory: json['memory']?.toString(),
-      mainCamera: json['main_camera']?.toString(),
-      selfieCamera: json['selfie_camera']?.toString(),
-      sound: json['sound']?.toString(),
-      comms: json['comms']?.toString(),
-      features: json['features']?.toString(),
-      battery: json['battery']?.toString(),
-      price: json['price']?.toString(),
-      imageUrl: json['image_url']?.toString(),
-    );
-  }
-
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is Phone && runtimeType == other.runtimeType && id == other.id;
-
-  @override
-  int get hashCode => id.hashCode;
-}
 
 // --- HALAMAN UTAMA ---
 class WelcomePage extends StatefulWidget {
@@ -87,12 +24,15 @@ class _WelcomePageState extends State<WelcomePage> {
   final primaryColor = const Color(0xFF553C9A);
   final secondaryColor = const Color(0xFF6C63FF);
   final blueColor = const Color(0xFF0175C2);
+  
+  // Instance ApiService
+  final ApiService _apiService = ApiService(); 
 
-  // State Data
+  // State Data (Menggunakan model Smartphone)
   List<String> _brandList = [];
   String? _selectedBrandName;
-  List<Phone> _phoneList = [];
-  final List<Phone> _listUntukDibandingkan = [];
+  List<Smartphone> _phoneList = [];
+  final List<Smartphone> _listUntukDibandingkan = [];
 
   // State UI
   bool _tampilkanHasilPerbandingan = false;
@@ -101,12 +41,7 @@ class _WelcomePageState extends State<WelcomePage> {
   String? _errorMessage;
 
   // State Login (Simulasi)
-  // Ubah ke true jika ingin mensimulasikan user yang sudah login
   bool _isLoggedIn = false;
-
-  // URL API (Sesuai screenshot IP Anda)
-  // PENTING: Cek ulang 'ipconfig' jika WiFi berubah
-  final String _baseUrl = 'http://192.168.0.113/api_hp';
 
   @override
   void initState() {
@@ -122,8 +57,10 @@ class _WelcomePageState extends State<WelcomePage> {
       _errorMessage = null;
     });
     try {
+      // 🚨 PERBAIKAN: Menggunakan ApiService.baseUrl
+      // Asumsi endpoint get_brands.php ada di root API
       final response = await http
-          .get(Uri.parse('$_baseUrl/get_brands.php'))
+          .get(Uri.parse('${ApiService.baseUrl}get_brands.php'))
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
@@ -133,11 +70,14 @@ class _WelcomePageState extends State<WelcomePage> {
         });
       } else {
         setState(() {
-          _errorMessage = "Gagal load brands: ${response.statusCode}";
+          _errorMessage = "Gagal load brands: HTTP ${response.statusCode}";
         });
       }
     } catch (e) {
       log("Error Brands: $e");
+      setState(() {
+        _errorMessage = "Gagal Koneksi Brand API: ${e.toString()}";
+      });
     } finally {
       setState(() {
         _isBrandLoading = false;
@@ -156,36 +96,21 @@ class _WelcomePageState extends State<WelcomePage> {
     });
 
     try {
-      final response = await http
-          .get(
-            Uri.parse(
-              '$_baseUrl/get_phones.php?brand_name=$_selectedBrandName',
-            ),
-          )
-          .timeout(const Duration(seconds: 10));
-
-      if (response.statusCode == 200) {
-        final List<dynamic> jsonData = jsonDecode(response.body);
-        if (jsonData.isNotEmpty &&
-            jsonData[0] is Map &&
-            jsonData[0]['error'] != null) {
-          setState(() {
-            _errorMessage = "API Error: ${jsonData[0]['error']}";
-          });
-        } else {
-          setState(() {
-            _phoneList = jsonData.map((json) => Phone.fromJson(json)).toList();
-          });
-        }
-      } else {
-        setState(() {
-          _errorMessage = "Server Error: ${response.statusCode}";
-        });
-      }
-    } catch (e) {
+      // 🚨 PERBAIKAN: Menggunakan fungsi fetch dari ApiService
+      // Fungsi ini sudah menangani URL, parsing, dan error API.
+      final List<Smartphone> phones = await _apiService.fetchPhonesByBrand(_selectedBrandName!);
+      
       setState(() {
-        _errorMessage =
-            "Koneksi Gagal: Pastikan IP $_baseUrl benar.\nError: $e";
+        _phoneList = phones;
+        if (_phoneList.isEmpty) {
+          _errorMessage = "Tidak ada data HP ditemukan untuk brand $_selectedBrandName.";
+        }
+      });
+      
+    } catch (e) {
+      log("Error Phones: $e");
+      setState(() {
+        _errorMessage = "Koneksi Gagal: Pastikan IP di ApiService benar.\nError: ${e.toString()}";
       });
     } finally {
       setState(() {
@@ -236,17 +161,7 @@ class _WelcomePageState extends State<WelcomePage> {
               children: [
                 TextButton(
                   onPressed: () {
-                    // Simulasi Login/Logout Button untuk testing
-                    /*
-                    setState(() {
-                      _isLoggedIn = !_isLoggedIn;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                        content: Text(
-                            "Status Login: ${_isLoggedIn ? 'LOGIN' : 'LOGOUT'}")));
-                    */
-
-                    // Navigasi ke Login Screen yang sebenarnya
+                    // Navigasi ke Login Screen
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -361,6 +276,7 @@ class _WelcomePageState extends State<WelcomePage> {
         setState(() {
           _selectedBrandName = val;
           _phoneList = [];
+          _listUntukDibandingkan.clear(); // Clear list perbandingan
           _tampilkanHasilPerbandingan = false;
           _errorMessage = null;
         });
@@ -378,6 +294,7 @@ class _WelcomePageState extends State<WelcomePage> {
           _listUntukDibandingkan.clear();
           _phoneList.clear();
           _selectedBrandName = null;
+          _fetchBrandsFromAPI(); // Refresh brand list
         }),
         label: const Text("Reset & Kembali"),
         icon: const Icon(Icons.close),
@@ -423,7 +340,7 @@ class _WelcomePageState extends State<WelcomePage> {
             child: GridView.builder(
               gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                 maxCrossAxisExtent: 300,
-                childAspectRatio: 0.8,
+                childAspectRatio: 0.75, // Disesuaikan agar proporsi mirip Card HP
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
@@ -496,7 +413,7 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   // Kartu HP dengan Checkbox dan Validasi Login
-  Widget _buildPhoneCard(Phone phone, bool isSelected) {
+  Widget _buildPhoneCard(Smartphone phone, bool isSelected) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -515,9 +432,9 @@ class _WelcomePageState extends State<WelcomePage> {
                     top: Radius.circular(12),
                   ),
                 ),
-                child: phone.imageUrl != null && phone.imageUrl!.isNotEmpty
+                child: phone.imageUrl.isNotEmpty
                     ? Image.network(
-                        phone.imageUrl!,
+                        phone.imageUrl, // Menggunakan field imageUrl dari model
                         fit: BoxFit.contain,
                         errorBuilder: (ctx, err, _) => const Icon(
                           Icons.broken_image,
@@ -642,7 +559,7 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
-  Widget _buildKolomPerbandingan(Phone phone) {
+  Widget _buildKolomPerbandingan(Smartphone phone) {
     return Container(
       width: 280,
       margin: const EdgeInsets.only(right: 16),
@@ -663,8 +580,8 @@ class _WelcomePageState extends State<WelcomePage> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: phone.imageUrl != null && phone.imageUrl!.isNotEmpty
-                  ? Image.network(phone.imageUrl!, fit: BoxFit.contain)
+              child: phone.imageUrl.isNotEmpty
+                  ? Image.network(phone.imageUrl, fit: BoxFit.contain)
                   : const Icon(
                       Icons.phone_android,
                       size: 50,
@@ -677,7 +594,7 @@ class _WelcomePageState extends State<WelcomePage> {
               style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            _buildSpecRow("Harga", phone.price ?? "N/A"),
+            _buildSpecRow("Harga", phone.price),
             _buildSpecRow("Layar", _parseSpec(phone.display, "Type:")),
             _buildSpecRow("Ukuran", _parseSpec(phone.display, "Size:")),
             _buildSpecRow("Resolusi", _parseSpec(phone.display, "Resolution:")),
@@ -748,9 +665,9 @@ class _WelcomePageState extends State<WelcomePage> {
               itemBuilder: (context, index) {
                 final phone = _listUntukDibandingkan[index];
                 return ListTile(
-                  leading: phone.imageUrl != null
+                  leading: phone.imageUrl.isNotEmpty
                       ? Image.network(
-                          phone.imageUrl!,
+                          phone.imageUrl,
                           width: 40,
                           height: 40,
                           fit: BoxFit.cover,
@@ -767,8 +684,9 @@ class _WelcomePageState extends State<WelcomePage> {
                         _listUntukDibandingkan.remove(phone);
                       });
                       Navigator.of(context).pop();
-                      if (_listUntukDibandingkan.isNotEmpty)
+                      if (_listUntukDibandingkan.isNotEmpty) {
                         _tampilkanDialogPerbandingan();
+                      }
                     },
                   ),
                 );
@@ -844,6 +762,7 @@ class _WelcomePageState extends State<WelcomePage> {
     return Container(
       padding: const EdgeInsets.all(24),
       margin: const EdgeInsets.all(24),
+      constraints: const BoxConstraints(maxWidth: 600),
       decoration: BoxDecoration(
         color: Colors.red[50],
         borderRadius: BorderRadius.circular(12),
@@ -873,8 +792,9 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
+  // Helper untuk mem-parsing spesifikasi (Sudah diperbaiki untuk konsistensi)
   String _parseSpec(String? specString, String key) {
-    if (specString == null) return "N/A";
+    if (specString == null || specString.isEmpty) return "N/A";
     try {
       var lines = specString.split('\n');
       var line = lines.firstWhere(
@@ -912,10 +832,11 @@ class _WelcomePageState extends State<WelcomePage> {
       builder: (context, controller, child) {
         return TextButton(
           onPressed: () {
-            if (controller.isOpen)
+            if (controller.isOpen) {
               controller.close();
-            else
+            } else {
               controller.open();
+            }
           },
           child: const Row(
             children: [
@@ -934,6 +855,27 @@ class _WelcomePageState extends State<WelcomePage> {
           child: _DeveloperMegaMenu(),
         ),
       ],
+    );
+  }
+}
+
+// --- WIDGET PENDUKUNG ---
+
+class _DeveloperMegaMenu extends StatelessWidget {
+  const _DeveloperMegaMenu();
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Developer Menu', style: TextStyle(fontWeight: FontWeight.bold)),
+          Divider(),
+          // Implementasi menu developer Anda
+          Text('Simulasi: Mode Admin', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
     );
   }
 }
@@ -1028,84 +970,6 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
           child: widget.child,
         );
       },
-    );
-  }
-}
-
-// --- DEVELOPER MENU (Tidak Berubah) ---
-class _DeveloperMegaMenu extends StatelessWidget {
-  const _DeveloperMegaMenu({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      padding: const EdgeInsets.all(32.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8.0),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 15,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildMenuColumn(
-            title: 'Developer',
-            items: [_buildMenuItem('Documentation', 'Dokumentasi API')],
-          ),
-          _buildMenuColumn(
-            title: '',
-            items: [_buildMenuItem('Kolaborasi', 'Jalankan partnership')],
-          ),
-          _buildMenuColumn(
-            title: '',
-            items: [_buildMenuItem('Error', 'Daftar rangkuman error')],
-          ),
-          _buildMenuColumn(
-            title: '',
-            items: [_buildMenuItem('Flows', 'Alur kerja API')],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuItem(String title, String subtitle) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 20.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(
-            subtitle,
-            style: const TextStyle(fontSize: 12, color: Colors.grey),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMenuColumn({
-    required String title,
-    required List<Widget> items,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (title.isNotEmpty)
-          Text(
-            title,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ...items,
-      ],
     );
   }
 }

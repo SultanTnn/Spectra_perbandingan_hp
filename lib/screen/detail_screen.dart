@@ -37,8 +37,9 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> fetchDetail() async {
     final url = Uri.parse(
-      'http://localhost/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
-    );
+  'http://192.168.1.18/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
+);
+
     try {
       final resp = await http.get(url);
       if (resp.statusCode == 200) {
@@ -72,7 +73,7 @@ class _DetailScreenState extends State<DetailScreen> {
     );
 
     try {
-      final url = Uri.parse('http://localhost/api_hp/delete_phone.php');
+      final url = Uri.parse('http://192.168.1.18/api_hp/delete_phone.php');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
