@@ -28,7 +28,7 @@ class _BrandScreenState extends State<BrandScreen> {
     if (kIsWeb) {
       return "http://localhost/api_hp/";
     } else {
-      return "http://192.168.1.18/api_hp/"; // IP LAN laptop kamu
+      return "http://192.168.43.60/api_hp/"; // IP LAN laptop kamu
     }
   }
 
@@ -39,9 +39,7 @@ class _BrandScreenState extends State<BrandScreen> {
   }
 
   Future<void> fetchPhones() async {
-    final url = Uri.parse(
-      "${baseUrl}get_phones.php?brand=${widget.brand}",
-    );
+    final url = Uri.parse("${baseUrl}get_phones.php?brand=${widget.brand}");
 
     try {
       final resp = await http.get(url);
@@ -72,18 +70,13 @@ class _BrandScreenState extends State<BrandScreen> {
 
   // Toggle selection (via ComparisonManager)
   void _toggleSelectionAndRefresh(Map<String, dynamic> item) {
-    ComparisonManager.toggleSelection(
-      widget.brand,
-      item['id'].toString(),
-    );
+    ComparisonManager.toggleSelection(widget.brand, item['id'].toString());
 
     setState(() {});
 
     if (ComparisonManager.selectedPhones.length > 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Maksimal 3 HP untuk dibandingkan"),
-        ),
+        const SnackBar(content: Text("Maksimal 3 HP untuk dibandingkan")),
       );
     }
   }
@@ -93,9 +86,8 @@ class _BrandScreenState extends State<BrandScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => CompareScreen(
-          phonesToCompare: ComparisonManager.selectedPhones,
-        ),
+        builder: (_) =>
+            CompareScreen(phonesToCompare: ComparisonManager.selectedPhones),
       ),
     ).then((_) {
       ComparisonManager.clearSelection();
@@ -132,57 +124,57 @@ class _BrandScreenState extends State<BrandScreen> {
 
       body: loading
           ? const Center(child: CircularProgressIndicator())
-
           : errorMessage.isNotEmpty
-              ? Center(child: Text(errorMessage))
+          ? Center(child: Text(errorMessage))
+          : ListView.builder(
+              padding: const EdgeInsets.all(8),
+              itemCount: items.length,
+              itemBuilder: (_, i) {
+                final it = items[i];
+                final isSelected = ComparisonManager.isSelected(
+                  it['id'].toString(),
+                );
 
-              : ListView.builder(
-                  padding: const EdgeInsets.all(8),
-                  itemCount: items.length,
-                  itemBuilder: (_, i) {
-                    final it = items[i];
-                    final isSelected = ComparisonManager.isSelected(
-                      it['id'].toString(),
-                    );
+                return Card(
+                  elevation: 3,
+                  margin: const EdgeInsets.symmetric(
+                    vertical: 6,
+                    horizontal: 8,
+                  ),
+                  child: ListTile(
+                    leading: isSelected
+                        ? const Icon(Icons.check_circle, color: Colors.green)
+                        : const Icon(Icons.radio_button_unchecked),
 
-                    return Card(
-                      elevation: 3,
-                      margin: const EdgeInsets.symmetric(
-                          vertical: 6, horizontal: 8),
-                      child: ListTile(
-                        leading: isSelected
-                            ? const Icon(Icons.check_circle,
-                                color: Colors.green)
-                            : const Icon(Icons.radio_button_unchecked),
+                    tileColor: isSelected ? Colors.blue.withOpacity(0.1) : null,
 
-                        tileColor:
-                            isSelected ? Colors.blue.withOpacity(0.1) : null,
+                    contentPadding: const EdgeInsets.symmetric(
+                      vertical: 8,
+                      horizontal: 16,
+                    ),
 
-                        contentPadding: const EdgeInsets.symmetric(
-                            vertical: 8, horizontal: 16),
+                    title: Text(it['nama_model'] ?? "Nama tidak ada"),
+                    subtitle: Text(it['price'] ?? "Harga tidak ada"),
+                    trailing: const Icon(Icons.phone_android),
 
-                        title: Text(it['nama_model'] ?? "Nama tidak ada"),
-                        subtitle: Text(it['price'] ?? "Harga tidak ada"),
-                        trailing: const Icon(Icons.phone_android),
+                    onTap: () => _toggleSelectionAndRefresh(it),
 
-                        onTap: () => _toggleSelectionAndRefresh(it),
-
-                        onLongPress: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DetailScreen(
-                                brand: widget.brand,
-                                id: it['id'].toString(),
-                                refreshCallback: fetchPhones,
-                              ),
-                            ),
-                          ).then((_) => fetchPhones());
-                        },
-                      ),
-                    );
-                  },
-                ),
+                    onLongPress: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => DetailScreen(
+                            brand: widget.brand,
+                            id: it['id'].toString(),
+                            refreshCallback: fetchPhones,
+                          ),
+                        ),
+                      ).then((_) => fetchPhones());
+                    },
+                  ),
+                );
+              },
+            ),
 
       floatingActionButton: (UserSession.role == "admin")
           ? FloatingActionButton(
@@ -190,8 +182,7 @@ class _BrandScreenState extends State<BrandScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) =>
-                        CreatePhoneScreen(brand: widget.brand),
+                    builder: (_) => CreatePhoneScreen(brand: widget.brand),
                   ),
                 ).then((_) => fetchPhones());
               },

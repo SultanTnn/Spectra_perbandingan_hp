@@ -1,17 +1,30 @@
-// lib/screen/welcome_page.dart
-
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/api_service.dart';
-import 'package:flutter_application_1/screen/smartphone.dart';
-import 'login_screen.dart'; // Pastikan file ini ada
-import 'register_screen.dart'; // Pastikan file ini ada
 import 'dart:developer';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+// Import file lokal
+import 'api_service.dart';
+import 'smartphone.dart';
+import 'login_screen.dart';
+import 'register_screen.dart';
+import 'session.dart';
 
-// --- HALAMAN UTAMA ---
+// --- KELAS BANTUAN UNTUK PENCARIAN ---
+class SearchOption {
+  final String label;
+  final String type; // 'brand' atau 'phone'
+  final dynamic data; // Bisa String (nama brand) atau Smartphone (objek hp)
+
+  SearchOption({required this.label, required this.type, required this.data});
+
+  @override
+  String toString() => label;
+}
+// -------------------------------------
+
 class WelcomePage extends StatefulWidget {
   const WelcomePage({super.key});
 
@@ -20,16 +33,12 @@ class WelcomePage extends StatefulWidget {
 }
 
 class _WelcomePageState extends State<WelcomePage> {
-  // Warna Tema
-  final primaryColor = const Color(0xFF553C9A);
-  final secondaryColor = const Color(0xFF6C63FF);
-  final blueColor = const Color(0xFF0175C2);
-  
-  // Instance ApiService
-  final ApiService _apiService = ApiService(); 
+  final ApiService _apiService = ApiService();
 
-  // State Data (Menggunakan model Smartphone)
+  // State Data
   List<String> _brandList = [];
+  List<SearchOption> _searchOptions = [];
+
   String? _selectedBrandName;
   List<Smartphone> _phoneList = [];
   final List<Smartphone> _listUntukDibandingkan = [];
@@ -38,253 +47,823 @@ class _WelcomePageState extends State<WelcomePage> {
   bool _tampilkanHasilPerbandingan = false;
   bool _isBrandLoading = false;
   bool _isPhoneLoading = false;
+  bool _isSearchIndexReady = false;
   String? _errorMessage;
 
-  // State Login (Simulasi)
-  bool _isLoggedIn = false;
+  // State Mode Gelap
+  bool _isDarkMode = false;
+
+  bool get _isLoggedIn => UserSession.id != null;
 
   @override
   void initState() {
     super.initState();
-    _fetchBrandsFromAPI();
+    _initData();
+  }
+
+  Future<void> _initData() async {
+    await _fetchBrandsFromAPI();
+    _populateSearchIndex();
   }
 
   // --- FUNGSI API ---
-
   Future<void> _fetchBrandsFromAPI() async {
     setState(() {
       _isBrandLoading = true;
       _errorMessage = null;
     });
     try {
-      // 🚨 PERBAIKAN: Menggunakan ApiService.baseUrl
-      // Asumsi endpoint get_brands.php ada di root API
       final response = await http
           .get(Uri.parse('${ApiService.baseUrl}get_brands.php'))
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = jsonDecode(response.body);
-        setState(() {
-          _brandList = jsonData.cast<String>();
-        });
+        if (mounted) {
+          setState(() {
+            _brandList = jsonData.map((e) => e.toString()).toList();
+            _brandList.sort(
+              (a, b) => a.toLowerCase().compareTo(b.toLowerCase()),
+            );
+
+            _searchOptions = _brandList
+                .map((b) => SearchOption(label: b, type: 'brand', data: b))
+                .toList();
+          });
+        }
       } else {
-        setState(() {
-          _errorMessage = "Gagal load brands: HTTP ${response.statusCode}";
-        });
+        if (mounted)
+          setState(
+            () => _errorMessage =
+                "Gagal load brands: HTTP ${response.statusCode}",
+          );
       }
     } catch (e) {
       log("Error Brands: $e");
-      setState(() {
-        _errorMessage = "Gagal Koneksi Brand API: ${e.toString()}";
-      });
+      if (mounted)
+        setState(() => _errorMessage = "Gagal Koneksi: Pastikan Server Nyala");
     } finally {
-      setState(() {
-        _isBrandLoading = false;
-      });
+      if (mounted) setState(() => _isBrandLoading = false);
     }
   }
 
-  Future<void> _fetchPhonesFromAPI() async {
-    if (_selectedBrandName == null) return;
+  Future<void> _populateSearchIndex() async {
+    if (_brandList.isEmpty) return;
+    try {
+      List<SearchOption> newOptions = List.from(_searchOptions);
+      for (String brand in _brandList) {
+        try {
+          final phones = await _apiService.fetchPhonesByBrand(brand);
+          for (var phone in phones) {
+            newOptions.add(
+              SearchOption(label: phone.namaModel, type: 'phone', data: phone),
+            );
+          }
+        } catch (_) {}
+      }
+      if (mounted) {
+        setState(() {
+          _searchOptions = newOptions;
+          _isSearchIndexReady = true;
+        });
+      }
+    } catch (e) {
+      log("Search Index Error: $e");
+    }
+  }
 
+  Future<void> _fetchPhonesFromAPI(String brand) async {
     setState(() {
       _isPhoneLoading = true;
+      _selectedBrandName = brand;
       _phoneList = [];
       _tampilkanHasilPerbandingan = false;
       _errorMessage = null;
     });
 
     try {
-      // 🚨 PERBAIKAN: Menggunakan fungsi fetch dari ApiService
-      // Fungsi ini sudah menangani URL, parsing, dan error API.
-      final List<Smartphone> phones = await _apiService.fetchPhonesByBrand(_selectedBrandName!);
-      
-      setState(() {
-        _phoneList = phones;
-        if (_phoneList.isEmpty) {
-          _errorMessage = "Tidak ada data HP ditemukan untuk brand $_selectedBrandName.";
-        }
-      });
-      
+      final List<Smartphone> phones = await _apiService.fetchPhonesByBrand(
+        brand,
+      );
+      if (mounted) {
+        setState(() {
+          _phoneList = phones;
+          if (_phoneList.isEmpty) {
+            _errorMessage = "Tidak ada data HP untuk brand $brand.";
+          }
+        });
+      }
     } catch (e) {
-      log("Error Phones: $e");
-      setState(() {
-        _errorMessage = "Koneksi Gagal: Pastikan IP di ApiService benar.\nError: ${e.toString()}";
-      });
+      if (mounted)
+        setState(() => _errorMessage = "Koneksi Gagal: ${e.toString()}");
     } finally {
-      setState(() {
-        _isPhoneLoading = false;
-      });
+      if (mounted) setState(() => _isPhoneLoading = false);
     }
   }
 
-  // --- TAMPILAN UTAMA ---
+  // --- UI BUILDER ---
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      // App Bar
-      appBar: AppBar(
-        backgroundColor: primaryColor,
-        elevation: 0,
-        automaticallyImplyLeading: false,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              'SPECTRA',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+    final textTheme = GoogleFonts.nunitoTextTheme(Theme.of(context).textTheme);
+    final glassColor = _isDarkMode
+        ? Colors.black.withOpacity(0.4)
+        : Colors.white.withOpacity(0.2);
+    final borderColor = _isDarkMode
+        ? Colors.white.withOpacity(0.1)
+        : Colors.white.withOpacity(0.3);
+
+    return Theme(
+      data: _isDarkMode
+          ? ThemeData.dark().copyWith(textTheme: textTheme)
+          : ThemeData.light().copyWith(textTheme: textTheme),
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          titleSpacing: 0,
+
+          // --- HEADER KIRI (LOGO & NAMA) ---
+          // Diperlebar agar teks "SPECTRA" tidak terpotong
+          leadingWidth: 220,
+          leading: Padding(
+            padding: const EdgeInsets.only(
+              left: 24.0,
+            ), // Padding kiri sedikit ditambah
+            child: Row(
+              children: [
+                // ICON HP
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: glassColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: borderColor),
+                  ),
+                  // GANTI PETIR JADI HP
+                  child: const Icon(
+                    Icons.smartphone_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // TEKS SPECTRA
+                Expanded(
+                  child: Text(
+                    'SPECTRA',
+                    style: GoogleFonts.fredoka(
+                      color: Colors.white,
+                      fontSize: 22, // Ukuran font disesuaikan agar pas
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // --- HEADER TENGAH (MENU SERAGAM) ---
+          title: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 650),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 1. MENU MERK (Dropdown)
+                    Theme(
+                      data: Theme.of(context).copyWith(
+                        splashColor: Colors.transparent,
+                        highlightColor: Colors.transparent,
+                        popupMenuTheme: PopupMenuThemeData(
+                          color: _isDarkMode
+                              ? const Color(0xFF1E1E2C)
+                              : Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                      child: PopupMenuButton<String>(
+                        tooltip: "Pilih Merk HP",
+                        offset: const Offset(0, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        onSelected: (String brand) {
+                          setState(() {
+                            _selectedBrandName = brand;
+                            _phoneList = [];
+                            _listUntukDibandingkan.clear();
+                            _tampilkanHasilPerbandingan = false;
+                            _errorMessage = null;
+                          });
+                          FocusManager.instance.primaryFocus?.unfocus();
+                          _fetchPhonesFromAPI(brand);
+                        },
+                        itemBuilder: (context) {
+                          if (_brandList.isEmpty) {
+                            return [
+                              const PopupMenuItem(
+                                enabled: false,
+                                child: Text("Memuat data..."),
+                              ),
+                            ];
+                          }
+                          return _brandList.map((String brand) {
+                            return PopupMenuItem<String>(
+                              value: brand,
+                              child: Text(
+                                brand,
+                                style: GoogleFonts.nunito(
+                                  fontWeight: FontWeight.w600,
+                                  color: _isDarkMode
+                                      ? Colors.white
+                                      : Colors.grey[800],
+                                ),
+                              ),
+                            );
+                          }).toList();
+                        },
+                        child: _buildGlassMenuButton(
+                          label: "Merk",
+                          icon: Icons.smartphone_rounded,
+                          isDropdown: true,
+                          glassColor: glassColor,
+                          borderColor: borderColor,
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // 2. TIM DEV
+                    _buildTooltipMenuButton(
+                      label: "Tim Dev",
+                      icon: Icons.group_rounded,
+                      message:
+                          "1. Sultan\n2. Anggota 2\n3. Anggota 3\n4. Anggota 4\n5. Anggota 5",
+                      glassColor: glassColor,
+                      borderColor: borderColor,
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // 3. TENTANG
+                    _buildTooltipMenuButton(
+                      label: "Tentang",
+                      icon: Icons.info_outline_rounded,
+                      message:
+                          "Aplikasi perbandingan spesifikasi smartphone.\n© 2025 Kelompok 3",
+                      glassColor: glassColor,
+                      borderColor: borderColor,
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // 4. VERSI
+                    _buildTooltipMenuButton(
+                      label: "Versi",
+                      icon: Icons.verified_rounded,
+                      message: "Versi Aplikasi: v1.0.0+1",
+                      glassColor: glassColor,
+                      borderColor: borderColor,
+                    ),
+                  ],
+                ),
               ),
             ),
-            // Menu Tengah
-            Row(
-              children: [
-                _buildBrandDropdown(), // Dropdown Merk HP
-                const SizedBox(width: 24),
-                _buildDeveloperMenu(),
-                const SizedBox(width: 24),
-                TextButton(
-                  onPressed: () => _showAboutDialog(context),
-                  child: const Text(
-                    'Tentang',
-                    style: TextStyle(color: Colors.white, fontSize: 16),
-                  ),
-                ),
-              ],
-            ),
-            // Tombol Kanan (Login/Register)
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () {
-                    // Navigasi ke Login Screen
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    _isLoggedIn ? 'Logout' : 'Masuk',
-                    style: const TextStyle(color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (!_isLoggedIn) // Hanya tampilkan jika belum login
-                  ElevatedButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const RegisterScreen(),
-                      ),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: blueColor,
-                      foregroundColor: Colors.white,
-                    ),
-                    child: const Text('Daftar Akun'),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
+          ),
 
-      // Body dengan Animated Background
-      body: AnimatedGradientBackground(
-        child: Column(
-          children: [
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 30.0),
-              child: Column(
+          // --- HEADER KANAN (MODE GELAP + LOGIN) ---
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 24.0),
+              child: Row(
                 children: [
-                  Text(
-                    'Selamat Datang di SPECTRA',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                  // TOMBOL MODE GELAP
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _isDarkMode = !_isDarkMode;
+                      });
+                    },
+                    tooltip: _isDarkMode ? "Mode Terang" : "Mode Gelap",
+                    icon: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      transitionBuilder: (child, anim) =>
+                          RotationTransition(turns: anim, child: child),
+                      child: Icon(
+                        _isDarkMode
+                            ? Icons.light_mode_rounded
+                            : Icons.dark_mode_rounded,
+                        key: ValueKey(_isDarkMode),
+                        color: Colors.yellowAccent,
+                      ),
                     ),
                   ),
-                  SizedBox(height: 10),
-                  Text(
-                    'Platform perbandingan spesifikasi ponsel pintar terlengkap.',
-                    style: TextStyle(fontSize: 14, color: Colors.white70),
-                  ),
+
+                  const SizedBox(width: 12),
+
+                  if (!_isLoggedIn)
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LoginScreen(),
+                        ),
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        shape: const StadiumBorder(),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        'Masuk',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  const SizedBox(width: 8),
+                  if (!_isLoggedIn)
+                    ElevatedButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RegisterScreen(),
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: const Color(0xFF553C9A),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                      ),
+                      child: const Text(
+                        'Daftar',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  if (_isLoggedIn)
+                    IconButton(
+                      icon: const Icon(
+                        Icons.logout_rounded,
+                        color: Colors.white,
+                      ),
+                      tooltip: "Keluar",
+                      onPressed: () {
+                        UserSession.clearSession();
+                        setState(() {});
+                      },
+                    ),
                 ],
               ),
             ),
-            Expanded(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1200),
-                  child: _buildBodyContent(),
-                ),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text(
-                'created by kelompok 3',
-                style: TextStyle(color: Colors.white70),
-              ),
-            ),
           ],
         ),
-      ),
 
-      // Floating Action Button
-      floatingActionButton: _buildFloatingActionButton(),
-    );
-  }
+        // --- BODY UTAMA ---
+        body: AnimatedGradientBackground(
+          isDarkMode: _isDarkMode,
+          child: SafeArea(
+            child: Column(
+              children: [
+                // CONTAINER TENGAH (PENCARIAN)
+                Container(
+                  margin: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 30,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _isDarkMode
+                        ? Colors.black.withOpacity(0.3)
+                        : Colors.white.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(40),
+                    border: Border.all(
+                      color: _isDarkMode
+                          ? Colors.white.withOpacity(0.1)
+                          : Colors.white.withOpacity(0.4),
+                      width: 1.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    children: [
+                      // Ikon Animasi (HP)
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 1.0, end: 1.1),
+                        duration: const Duration(seconds: 1),
+                        curve: Curves.easeInOut,
+                        builder: (context, double scale, child) {
+                          return Transform.scale(scale: scale, child: child);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.orange.withOpacity(0.6),
+                                blurRadius: 20,
+                                spreadRadius: 5,
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.smartphone_rounded,
+                            color: Colors.orange,
+                            size: 40,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
 
-  // --- WIDGET BUILDERS ---
+                      // Judul SPECTRA
+                      Text(
+                        'SPECTRA',
+                        style: GoogleFonts.fredoka(
+                          fontSize: 40,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          letterSpacing: 2.0,
+                          shadows: [
+                            Shadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Bandingkan spesifikasi ribuan handphone dengan mudah.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 25),
 
-  Widget _buildBrandDropdown() {
-    return PopupMenuButton<String>(
-      tooltip: 'Pilih Merk HP',
-      child: Row(
-        children: [
-          Text(
-            _selectedBrandName ?? 'Merk HP',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
-          ),
-          _isBrandLoading
-              ? const Padding(
-                  padding: EdgeInsets.only(left: 8.0),
-                  child: SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
+                      // --- SMART SEARCH (AUTOCOMPLETE) ---
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          return Autocomplete<SearchOption>(
+                            optionsBuilder:
+                                (TextEditingValue textEditingValue) {
+                                  if (textEditingValue.text == '')
+                                    return const Iterable<SearchOption>.empty();
+                                  return _searchOptions.where((
+                                    SearchOption option,
+                                  ) {
+                                    return option.label.toLowerCase().contains(
+                                      textEditingValue.text.toLowerCase(),
+                                    );
+                                  });
+                                },
+                            displayStringForOption: (SearchOption option) =>
+                                option.label,
+                            onSelected: (SearchOption selection) {
+                              FocusManager.instance.primaryFocus?.unfocus();
+                              if (selection.type == 'brand') {
+                                _fetchPhonesFromAPI(selection.data as String);
+                              } else if (selection.type == 'phone') {
+                                final phone = selection.data as Smartphone;
+                                setState(() {
+                                  _selectedBrandName = phone.brand;
+                                  _phoneList = [phone];
+                                  _listUntukDibandingkan.clear();
+                                  _tampilkanHasilPerbandingan = false;
+                                  _errorMessage = null;
+                                  _isPhoneLoading = false;
+                                });
+                              }
+                            },
+                            fieldViewBuilder:
+                                (
+                                  context,
+                                  textEditingController,
+                                  focusNode,
+                                  onFieldSubmitted,
+                                ) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 4,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: _isDarkMode
+                                          ? const Color(0xFF2C2C3E)
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(50),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 15,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          Icons.search_rounded,
+                                          color: _isDarkMode
+                                              ? Colors.white70
+                                              : const Color(0xFF6C63FF),
+                                          size: 26,
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: TextField(
+                                            controller: textEditingController,
+                                            focusNode: focusNode,
+                                            style: TextStyle(
+                                              color: _isDarkMode
+                                                  ? Colors.white
+                                                  : const Color(0xFF553C9A),
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 16,
+                                            ),
+                                            decoration: InputDecoration(
+                                              hintText: _isSearchIndexReady
+                                                  ? "Ketik Merk / Model HP..."
+                                                  : "Memuat data...",
+                                              hintStyle: TextStyle(
+                                                color: _isDarkMode
+                                                    ? Colors.white38
+                                                    : Colors.grey[400],
+                                                fontWeight: FontWeight.normal,
+                                              ),
+                                              border: InputBorder.none,
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                    vertical: 16,
+                                                  ),
+                                            ),
+                                          ),
+                                        ),
+                                        if (_isBrandLoading)
+                                          const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                            optionsViewBuilder: (context, onSelected, options) {
+                              return Align(
+                                alignment: Alignment.topLeft,
+                                child: Material(
+                                  elevation: 8.0,
+                                  borderRadius: BorderRadius.circular(20),
+                                  color: _isDarkMode
+                                      ? const Color(0xFF2C2C3E)
+                                      : Colors.white,
+                                  child: Container(
+                                    width: constraints.maxWidth,
+                                    constraints: const BoxConstraints(
+                                      maxHeight: 320,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(20),
+                                      color: _isDarkMode
+                                          ? const Color(0xFF2C2C3E)
+                                          : Colors.white,
+                                    ),
+                                    child: ListView.separated(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 8,
+                                      ),
+                                      itemCount: options.length,
+                                      separatorBuilder: (ctx, i) => Divider(
+                                        height: 1,
+                                        color: _isDarkMode
+                                            ? Colors.white10
+                                            : Colors.grey[100],
+                                      ),
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                            final SearchOption option = options
+                                                .elementAt(index);
+                                            return ListTile(
+                                              leading: Container(
+                                                padding: const EdgeInsets.all(
+                                                  8,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: option.type == 'brand'
+                                                      ? (_isDarkMode
+                                                            ? Colors.blue
+                                                                  .withOpacity(
+                                                                    0.2,
+                                                                  )
+                                                            : Colors.blue[50])
+                                                      : (_isDarkMode
+                                                            ? Colors.orange
+                                                                  .withOpacity(
+                                                                    0.2,
+                                                                  )
+                                                            : Colors
+                                                                  .orange[50]),
+                                                  shape: BoxShape.circle,
+                                                ),
+                                                child: Icon(
+                                                  option.type == 'brand'
+                                                      ? Icons.business_rounded
+                                                      : Icons
+                                                            .smartphone_rounded,
+                                                  color: option.type == 'brand'
+                                                      ? Colors.blue
+                                                      : Colors.orange,
+                                                  size: 20,
+                                                ),
+                                              ),
+                                              title: Text(
+                                                option.label,
+                                                style: TextStyle(
+                                                  color: _isDarkMode
+                                                      ? Colors.white
+                                                      : Colors.grey[800],
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              subtitle: Text(
+                                                option.type == 'phone'
+                                                    ? "Model HP"
+                                                    : "Merk",
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: _isDarkMode
+                                                      ? Colors.white54
+                                                      : Colors.grey[500],
+                                                ),
+                                              ),
+                                              onTap: () => onSelected(option),
+                                            );
+                                          },
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Content Area (List HP)
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: _isDarkMode
+                          ? const Color(0xFF1E1E2C)
+                          : Colors.white,
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(40),
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(40),
+                      ),
+                      child: _buildBodyContent(),
                     ),
                   ),
-                )
-              : const Icon(Icons.arrow_drop_down, color: Colors.white),
-        ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        floatingActionButton: _buildFloatingActionButton(),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       ),
-      itemBuilder: (context) => _brandList
-          .map((brand) => PopupMenuItem(value: brand, child: Text(brand)))
-          .toList(),
-      onSelected: (val) {
-        setState(() {
-          _selectedBrandName = val;
-          _phoneList = [];
-          _listUntukDibandingkan.clear(); // Clear list perbandingan
-          _tampilkanHasilPerbandingan = false;
-          _errorMessage = null;
-        });
-        // Otomatis load data setelah pilih merk
-        _fetchPhonesFromAPI();
-      },
     );
   }
+
+  // --- WIDGET HELPER AGAR UKURAN TOMBOL SERAGAM ---
+
+  Widget _buildTooltipMenuButton({
+    required String label,
+    required IconData icon,
+    required String message,
+    required Color glassColor,
+    required Color borderColor,
+  }) {
+    return Tooltip(
+      message: message,
+      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(top: 10),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade900.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(color: Colors.black26, blurRadius: 8, offset: Offset(0, 4)),
+        ],
+      ),
+      textStyle: const TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        height: 1.4,
+      ),
+      triggerMode: TooltipTriggerMode.tap,
+      child: _buildGlassMenuButton(
+        label: label,
+        icon: icon,
+        isDropdown: false,
+        glassColor: glassColor,
+        borderColor: borderColor,
+      ),
+    );
+  }
+
+  // WIDGET TOMBOL MENU (SERAGAM)
+  Widget _buildGlassMenuButton({
+    required String label,
+    required IconData icon,
+    required bool isDropdown,
+    required Color glassColor,
+    required Color borderColor,
+    VoidCallback? onTap,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 0),
+      child: Material(
+        color: glassColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: borderColor, width: 1),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(
+                  isDropdown
+                      ? Icons.keyboard_arrow_down_rounded
+                      : Icons.keyboard_arrow_up_rounded,
+                  color: Colors.white70,
+                  size: 16,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // --- SISA WIDGET (FAB, CONTENT, DLL) ---
 
   Widget? _buildFloatingActionButton() {
     if (_tampilkanHasilPerbandingan) {
@@ -294,18 +873,29 @@ class _WelcomePageState extends State<WelcomePage> {
           _listUntukDibandingkan.clear();
           _phoneList.clear();
           _selectedBrandName = null;
-          _fetchBrandsFromAPI(); // Refresh brand list
+          _fetchBrandsFromAPI();
         }),
-        label: const Text("Reset & Kembali"),
-        icon: const Icon(Icons.close),
-        backgroundColor: Colors.red,
+        label: const Text("Reset"),
+        icon: const Icon(Icons.refresh_rounded),
+        backgroundColor: Colors.redAccent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       );
     } else if (_listUntukDibandingkan.isNotEmpty) {
-      return FloatingActionButton.extended(
-        onPressed: _tampilkanDialogPerbandingan,
-        label: Text('Bandingkan (${_listUntukDibandingkan.length})'),
-        icon: const Icon(Icons.compare_arrows),
-        backgroundColor: secondaryColor,
+      return Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        child: FloatingActionButton.extended(
+          onPressed: _tampilkanDialogPerbandingan,
+          label: Text(
+            'Bandingkan (${_listUntukDibandingkan.length})',
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          icon: const Icon(Icons.compare_arrows_rounded),
+          backgroundColor: const Color(0xFF6C63FF),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(50),
+          ),
+          elevation: 5,
+        ),
       );
     }
     return null;
@@ -319,200 +909,291 @@ class _WelcomePageState extends State<WelcomePage> {
     return _buildKontenKosong();
   }
 
-  // Widget Shimmer Loading (Efek Skeleton)
-  Widget _buildShimmerLoading() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
-            child: Container(width: 200, height: 24, color: Colors.white),
+  Widget _buildKontenKosong() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(25),
+          decoration: BoxDecoration(
+            color: _isDarkMode ? Colors.white10 : Colors.blue[50],
+            shape: BoxShape.circle,
           ),
-          const SizedBox(height: 24),
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 300,
-                childAspectRatio: 0.75, // Disesuaikan agar proporsi mirip Card HP
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-              ),
-              itemCount: 6,
-              itemBuilder: (_, __) => Shimmer.fromColors(
-                baseColor: Colors.grey[300]!,
-                highlightColor: Colors.grey[100]!,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey[200]!),
-                  ),
-                ),
-              ),
+          child: Icon(
+            Icons.touch_app_rounded,
+            size: 60,
+            color: _isDarkMode
+                ? Colors.white54
+                : const Color(0xFF0175C2).withOpacity(0.5),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          "Siap Membandingkan?",
+          style: GoogleFonts.fredoka(
+            fontSize: 22,
+            color: _isDarkMode ? Colors.white : const Color(0xFF553C9A),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: Text(
+            "Pilih dari menu atau cari langsung di atas!",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _isDarkMode ? Colors.grey[400] : Colors.grey,
+              fontSize: 14,
             ),
           ),
-        ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildShimmerLoading() {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: GridView.builder(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 250,
+          childAspectRatio: 0.7,
+          crossAxisSpacing: 15,
+          mainAxisSpacing: 15,
+        ),
+        itemCount: 6,
+        itemBuilder: (_, __) => Shimmer.fromColors(
+          baseColor: _isDarkMode ? Colors.grey[800]! : Colors.grey[300]!,
+          highlightColor: _isDarkMode ? Colors.grey[700]! : Colors.grey[100]!,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildHasilPencarian() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24.0),
-      padding: const EdgeInsets.all(24.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 15,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            'Hasil untuk: $_selectedBrandName',
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text('Ditemukan ${_phoneList.length} HP'),
-          const Divider(height: 24),
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 250,
-                childAspectRatio: 0.75,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 10),
+          child: Row(
+            children: [
+              Text(
+                '$_selectedBrandName',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                  color: _isDarkMode ? Colors.white : const Color(0xFF553C9A),
+                ),
               ),
-              itemCount: _phoneList.length,
-              itemBuilder: (context, index) {
-                final phone = _phoneList[index];
-                final bool isSelected = _listUntukDibandingkan.contains(phone);
-                return _buildPhoneCard(phone, isSelected);
-              },
-            ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      (_isDarkMode
+                              ? Colors.blueAccent
+                              : const Color(0xFF0175C2))
+                          .withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Text(
+                  '${_phoneList.length} Unit',
+                  style: TextStyle(
+                    color: _isDarkMode
+                        ? Colors.blueAccent
+                        : const Color(0xFF0175C2),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 80),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 220,
+              childAspectRatio: 0.68,
+              crossAxisSpacing: 15,
+              mainAxisSpacing: 15,
+            ),
+            itemCount: _phoneList.length,
+            itemBuilder: (context, index) {
+              final phone = _phoneList[index];
+              final bool isSelected = _listUntukDibandingkan.contains(phone);
+              return _buildPhoneCard(phone, isSelected);
+            },
+          ),
+        ),
+      ],
     );
   }
 
-  // Kartu HP dengan Checkbox dan Validasi Login
   Widget _buildPhoneCard(Smartphone phone, bool isSelected) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () {},
+    final cardColor = _isDarkMode ? const Color(0xFF2C2C3E) : Colors.white;
+    final borderColor = _isDarkMode ? Colors.grey[700]! : Colors.grey.shade100;
+    final textColor = _isDarkMode ? Colors.white : Colors.grey[800];
+
+    return InkWell(
+      onTap: () {},
+      borderRadius: BorderRadius.circular(25),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        decoration: BoxDecoration(
+          color: cardColor,
+          borderRadius: BorderRadius.circular(25),
+          border: isSelected
+              ? Border.all(color: const Color(0xFF6C63FF), width: 3)
+              : Border.all(color: borderColor),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected
+                  ? const Color(0xFF6C63FF).withOpacity(0.3)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: isSelected ? 15 : 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Gambar HP
             Expanded(
+              flex: 3,
               child: Container(
-                width: double.infinity,
+                margin: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.grey[100],
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(12),
-                  ),
+                  color: _isDarkMode ? Colors.black26 : Colors.grey[50],
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: phone.imageUrl.isNotEmpty
-                    ? Image.network(
-                        phone.imageUrl, // Menggunakan field imageUrl dari model
-                        fit: BoxFit.contain,
-                        errorBuilder: (ctx, err, _) => const Icon(
-                          Icons.broken_image,
-                          size: 50,
-                          color: Colors.grey,
+                    ? Hero(
+                        tag: 'phone_${phone.id}_${phone.namaModel}',
+                        child: Image.network(
+                          phone.imageUrl,
+                          fit: BoxFit.contain,
+                          errorBuilder: (ctx, err, _) => Icon(
+                            Icons.image_not_supported_rounded,
+                            color: Colors.grey[300],
+                          ),
                         ),
                       )
-                    : const Icon(
-                        Icons.phone_android,
-                        size: 60,
-                        color: Colors.grey,
+                    : Icon(
+                        Icons.phone_android_rounded,
+                        size: 50,
+                        color: Colors.grey[300],
                       ),
               ),
             ),
-            // Info Text
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    phone.namaModel,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12.0,
+                  vertical: 4,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      phone.namaModel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: textColor,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _parseSpec(phone.platform, "Chipset:"),
-                    style: TextStyle(fontSize: 12, color: Colors.grey[700]),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        phone.price.isNotEmpty ? phone.price : "Harga N/A",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            // Checkbox dengan Validasi 3 Item
-            CheckboxListTile(
-              value: isSelected,
-              title: const Text("Pilih", style: TextStyle(fontSize: 13)),
-              controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              dense: true,
-              activeColor: primaryColor,
-              onChanged: (val) {
-                setState(() {
-                  if (val == true) {
-                    // VALIDASI LOGIN & JUMLAH ITEM
-                    if (!_isLoggedIn && _listUntukDibandingkan.length >= 3) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text(
-                            "Mode Tamu: Login untuk membandingkan lebih dari 3 HP!",
-                          ),
-                          backgroundColor: Colors.redAccent,
-                          action: SnackBarAction(
-                            label: 'Login',
-                            textColor: Colors.white,
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const LoginScreen(),
-                              ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 0, 8, 10),
+              child: InkWell(
+                onTap: () {
+                  setState(() {
+                    if (!isSelected) {
+                      if (!_isLoggedIn && _listUntukDibandingkan.length >= 3) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Login untuk membandingkan lebih banyak!",
                             ),
+                            backgroundColor: Colors.redAccent,
                           ),
-                        ),
-                      );
-                      return; // Batalkan aksi
+                        );
+                        return;
+                      }
+                      if (_listUntukDibandingkan.length >= 3) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Maksimal 3 HP"),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        return;
+                      }
+                      _listUntukDibandingkan.add(phone);
+                    } else {
+                      _listUntukDibandingkan.remove(phone);
                     }
-                    _listUntukDibandingkan.add(phone);
-                  } else {
-                    _listUntukDibandingkan.remove(phone);
-                  }
-                });
-              },
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? const Color(0xFF6C63FF)
+                        : (_isDarkMode ? Colors.grey[800] : Colors.grey[100]),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Center(
+                    child: Text(
+                      isSelected ? "Terpilih" : "Pilih",
+                      style: TextStyle(
+                        color: isSelected
+                            ? Colors.white
+                            : (_isDarkMode ? Colors.white60 : Colors.grey[600]),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -521,237 +1202,145 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   Widget _buildPerbandinganFinal() {
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.95,
-      height: MediaQuery.of(context).size.height * 0.75,
-      padding: const EdgeInsets.all(24.0),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 15,
-            offset: Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const Text(
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Text(
             'Perbandingan Spesifikasi',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const Divider(height: 24),
-          Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: _listUntukDibandingkan
-                    .map((phone) => _buildKolomPerbandingan(phone))
-                    .toList(),
-              ),
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: _isDarkMode ? Colors.white : const Color(0xFF553C9A),
             ),
           ),
-        ],
-      ),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _listUntukDibandingkan
+                  .map((phone) => _buildKolomPerbandingan(phone))
+                  .toList(),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
   Widget _buildKolomPerbandingan(Smartphone phone) {
+    final bgColor = _isDarkMode ? const Color(0xFF2C2C3E) : Colors.white;
+    final textColor = _isDarkMode ? Colors.white : const Color(0xFF553C9A);
+
     return Container(
-      width: 280,
-      margin: const EdgeInsets.only(right: 16),
+      width: 260,
+      margin: const EdgeInsets.only(right: 16, bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.grey[50],
+        color: bgColor,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+        border: Border.all(
+          color: _isDarkMode ? Colors.grey[800]! : Colors.grey[100]!,
+        ),
       ),
       child: SingleChildScrollView(
         child: Column(
           children: [
             Container(
-              height: 150,
-              width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 16),
+              height: 140,
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
+                color: _isDarkMode ? Colors.black26 : Colors.grey[50],
+                borderRadius: BorderRadius.circular(20),
               ),
               child: phone.imageUrl.isNotEmpty
                   ? Image.network(phone.imageUrl, fit: BoxFit.contain)
                   : const Icon(
-                      Icons.phone_android,
+                      Icons.phone_android_rounded,
                       size: 50,
                       color: Colors.grey,
                     ),
             ),
+            const SizedBox(height: 15),
             Text(
               phone.namaModel,
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: textColor,
+              ),
             ),
             const SizedBox(height: 20),
-            _buildSpecRow("Harga", phone.price),
-            _buildSpecRow("Layar", _parseSpec(phone.display, "Type:")),
-            _buildSpecRow("Ukuran", _parseSpec(phone.display, "Size:")),
-            _buildSpecRow("Resolusi", _parseSpec(phone.display, "Resolution:")),
-            _buildSpecRow("OS", _parseSpec(phone.platform, "OS:")),
-            _buildSpecRow("Chipset", _parseSpec(phone.platform, "Chipset:")),
-            _buildSpecRow("Memori", _parseSpec(phone.memory, "Internal:")),
-            _buildSpecRow(
-              "Kamera Utama",
-              _parseSpec(phone.mainCamera, "Triple:") ??
-                  _parseSpec(phone.mainCamera, "Dual:") ??
-                  "Lihat detail",
+            _buildSpecPill("Harga", phone.price, Colors.green),
+            _buildSpecPill(
+              "Layar",
+              _parseSpec(phone.display, "Type:"),
+              Colors.blue,
             ),
-            _buildSpecRow(
-              "Kamera Depan",
-              _parseSpec(phone.selfieCamera, "Single:"),
+            _buildSpecPill(
+              "Chipset",
+              _parseSpec(phone.platform, "Chipset:"),
+              Colors.orange,
             ),
-            _buildSpecRow("Baterai", _parseSpec(phone.battery, "Type:")),
-            _buildSpecRow("Charging", _parseSpec(phone.battery, "Charging:")),
+            _buildSpecPill(
+              "Memori",
+              _parseSpec(phone.memory, "Internal:"),
+              Colors.purple,
+            ),
+            _buildSpecPill(
+              "Kamera",
+              _parseSpec(phone.mainCamera, "Triple:") ?? "Lihat detail",
+              Colors.pink,
+            ),
+            _buildSpecPill(
+              "Baterai",
+              _parseSpec(phone.battery, "Type:"),
+              Colors.teal,
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSpecRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            flex: 2,
-            child: Text(
-              label,
-              style: TextStyle(
-                color: Colors.grey[600],
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              value,
-              style: const TextStyle(color: Colors.black87, fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // --- Helper Lainnya ---
-
-  void _tampilkanDialogPerbandingan() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('HP yang Dipilih'),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: ListView.separated(
-              shrinkWrap: true,
-              itemCount: _listUntukDibandingkan.length,
-              separatorBuilder: (ctx, i) => const Divider(),
-              itemBuilder: (context, index) {
-                final phone = _listUntukDibandingkan[index];
-                return ListTile(
-                  leading: phone.imageUrl.isNotEmpty
-                      ? Image.network(
-                          phone.imageUrl,
-                          width: 40,
-                          height: 40,
-                          fit: BoxFit.cover,
-                        )
-                      : const Icon(Icons.phone_android),
-                  title: Text(
-                    phone.namaModel,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _listUntukDibandingkan.remove(phone);
-                      });
-                      Navigator.of(context).pop();
-                      if (_listUntukDibandingkan.isNotEmpty) {
-                        _tampilkanDialogPerbandingan();
-                      }
-                    },
-                  ),
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _tampilkanHasilPerbandingan = true;
-                });
-                Navigator.of(context).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: primaryColor,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Bandingkan Sekarang'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildKontenKosong() {
+  Widget _buildSpecPill(String label, String value, MaterialColor color) {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      padding: const EdgeInsets.all(32.0),
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.3)),
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(15),
       ),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            Icons.search_outlined,
-            color: Colors.white.withOpacity(0.8),
-            size: 60,
-          ),
-          const SizedBox(height: 20),
           Text(
-            _selectedBrandName == null
-                ? 'Mulai Bandingkan'
-                : 'Siap Memuat Data',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              color: color,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
           Text(
-            _selectedBrandName == null
-                ? 'Pilih "Merk HP" di menu atas untuk memulai.'
-                : 'Sedang memuat data untuk $_selectedBrandName...',
+            value,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: _isDarkMode ? Colors.white70 : Colors.black87,
+            ),
           ),
         ],
       ),
@@ -759,40 +1348,48 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   Widget _buildErrorWidget(String message) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      margin: const EdgeInsets.all(24),
-      constraints: const BoxConstraints(maxWidth: 600),
-      decoration: BoxDecoration(
-        color: Colors.red[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red[200]!),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.error, color: Colors.red, size: 48),
-          const SizedBox(height: 16),
-          const Text(
-            'Terjadi Kesalahan',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.red,
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        margin: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error_outline_rounded, color: Colors.red[400], size: 50),
+            const SizedBox(height: 16),
+            Text(
+              'Ups, ada masalah!',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.red[800],
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.red[800]),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.red[600]),
+            ),
+            const SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _fetchBrandsFromAPI,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text("Coba Lagi"),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  // Helper untuk mem-parsing spesifikasi (Sudah diperbaiki untuk konsistensi)
   String _parseSpec(String? specString, String key) {
     if (specString == null || specString.isEmpty) return "N/A";
     try {
@@ -808,83 +1405,22 @@ class _WelcomePageState extends State<WelcomePage> {
     }
   }
 
-  void _showAboutDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Tentang SPECTRA'),
-        content: const Text(
-          'SPECTRA adalah platform perbandingan spesifikasi ponsel pintar terlengkap.\n\nDibuat oleh Kelompok 3.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Tutup'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  MenuAnchor _buildDeveloperMenu() {
-    return MenuAnchor(
-      alignmentOffset: const Offset(0, 10),
-      builder: (context, controller, child) {
-        return TextButton(
-          onPressed: () {
-            if (controller.isOpen) {
-              controller.close();
-            } else {
-              controller.open();
-            }
-          },
-          child: const Row(
-            children: [
-              Text(
-                'Developer',
-                style: TextStyle(color: Colors.white, fontSize: 16),
-              ),
-              Icon(Icons.arrow_drop_down, color: Colors.white),
-            ],
-          ),
-        );
-      },
-      menuChildren: [
-        const Padding(
-          padding: EdgeInsets.only(top: 8.0),
-          child: _DeveloperMegaMenu(),
-        ),
-      ],
-    );
+  void _tampilkanDialogPerbandingan() {
+    setState(() {
+      _tampilkanHasilPerbandingan = true;
+    });
   }
 }
 
-// --- WIDGET PENDUKUNG ---
-
-class _DeveloperMegaMenu extends StatelessWidget {
-  const _DeveloperMegaMenu();
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Developer Menu', style: TextStyle(fontWeight: FontWeight.bold)),
-          Divider(),
-          // Implementasi menu developer Anda
-          Text('Simulasi: Mode Admin', style: TextStyle(color: Colors.grey)),
-        ],
-      ),
-    );
-  }
-}
-
-// --- ANIMATED BACKGROUND (Widget Baru) ---
+// --- ANIMATED BACKGROUND ---
 class AnimatedGradientBackground extends StatefulWidget {
   final Widget child;
-  const AnimatedGradientBackground({super.key, required this.child});
-
+  final bool isDarkMode; // Terima status Dark Mode
+  const AnimatedGradientBackground({
+    super.key,
+    required this.child,
+    required this.isDarkMode,
+  });
   @override
   State<AnimatedGradientBackground> createState() =>
       _AnimatedGradientBackgroundState();
@@ -921,7 +1457,6 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
         weight: 1,
       ),
     ]).animate(_controller);
-
     _bottomAlignmentAnimation = TweenSequence<Alignment>([
       TweenSequenceItem(
         tween: Tween(begin: Alignment.bottomRight, end: Alignment.bottomLeft),
@@ -940,7 +1475,6 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
         weight: 1,
       ),
     ]).animate(_controller);
-
     _controller.repeat();
   }
 
@@ -952,19 +1486,29 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
 
   @override
   Widget build(BuildContext context) {
-    const color1 = Color(0xFF553C9A);
-    const color2 = Color(0xFF6C63FF);
-    const color3 = Color(0xFF0175C2);
+    // Warna Light Mode
+    const lightColors = [
+      Color(0xFF553C9A),
+      Color(0xFF6C63FF),
+      Color(0xFF0175C2),
+    ];
+    // Warna Dark Mode (Lebih Gelap/Deep)
+    const darkColors = [
+      Color(0xFF1A103C),
+      Color(0xFF2D1B4E),
+      Color(0xFF003366),
+    ];
 
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        return Container(
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 500),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: _topAlignmentAnimation.value,
               end: _bottomAlignmentAnimation.value,
-              colors: const [color1, color2, color3],
+              colors: widget.isDarkMode ? darkColors : lightColors,
             ),
           ),
           child: widget.child,
