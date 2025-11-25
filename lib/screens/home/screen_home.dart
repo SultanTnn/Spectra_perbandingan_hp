@@ -3,12 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'brand_screen.dart'; // Layar yang menampilkan daftar HP merek tertentu
+import '../comparison/brand_screen.dart'; // Layar yang menampilkan daftar HP merek tertentu
 
 // --- IMPORT UNTUK PROFIL & LOGOUT ---
-import 'login_screen.dart';
-import 'session.dart';
-import 'profile_screen.dart';
+import '../auth/login_screen.dart';
+import '../../utils/session.dart';
+import '../profile_screen.dart';
 // ------------------------------------
 
 class HomeScreen extends StatefulWidget {
@@ -24,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ⚠️ PENTING: GANTI IP ADDRESS INI DENGAN IP KOMPUTER ANDA!
   // Ini harus sesuai dengan BASE_URL API Anda.
   static const String BASE_URL =
-      'http://192.168.43.60/api_hp'; // <--- GANTI IP ANDA
+      'http://192.168.1.32/api_hp'; // <--- GANTI IP ANDA
 
   // 🔹 KEMBALI KE STRING: Hanya menyimpan nama merek
   List<String> brands = [];

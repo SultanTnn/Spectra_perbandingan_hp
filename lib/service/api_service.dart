@@ -1,58 +1,66 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter_application_1/screen/smartphone.dart';
-import 'dart:io' show Platform; // Diperlukan untuk mendeteksi Platform
+import 'package:flutter_application_1/models/smartphone.dart';
+import 'dart:io' show Platform; 
 
 class ApiService {
 
   // ======================================================
-  // 1. KONFIGURASI IP LOKAL (WAJIB DIGANTI)
+  // 1. KONFIGURASI IP LOKAL
   // ======================================================
   
-  // 💡 GANTI dengan IP Lokal PC Anda (Contoh: 192.168.1.18)
-  static const String _localHostIp = "YOUR_PC_LOCAL_IP_ADDRESS"; 
+  // 💡 IP PC Anda (Host)
+  static const String _localHostIp = "http://192.168.1.32"; 
+  
+  static const String _apiFolder = "/api_hp/"; 
   
   // URL untuk Android Emulator (IP Khusus)
-  static const String _emulatorUrl = "http://10.0.2.2/api_hp/";
+  static const String _emulatorUrl = "http://10.0.2.2$_apiFolder";
 
-  // URL menggunakan IP Lokal PC (untuk Perangkat Fisik/iOS Simulator)
-  static String get _localUrl => "http://$_localHostIp/api_hp/";
+  // URL menggunakan IP Lokal PC 
+  static String get _localUrl => "$_localHostIp$_apiFolder";
 
   // ======================================================
   // 2. LOGIKA PENENTUAN BASE URL
   // ======================================================
 
   static String get baseUrl {
-    // 1. Lingkungan Web (Browser)
+    
+    // 1. Lingkungan Web: Paksa menggunakan IP Lokal PC Anda
     if (kIsWeb) {
-      return "http://localhost/api_hp/";
+      return _localUrl; 
     } 
     
     // 2. Lingkungan Mobile/Desktop
     try {
-      // Cek apakah platform adalah Android
       if (Platform.isAndroid) {
-        // Pilihan A: Prioritaskan Android Emulator (paling umum di development)
+        // Prioritaskan Android Emulator (10.0.2.2)
         return _emulatorUrl;
-        
-        // Pilihan B: Prioritaskan Perangkat Fisik (uncomment baris di bawah)
-        // return _localUrl; 
       } 
       
-      // 3. iOS Simulator / Desktop / Perangkat Fisik non-Android
+      // 3. iOS Simulator / Perangkat Fisik non-Android / Desktop
       return _localUrl;
 
     } catch (e) {
-      // Fallback jika terjadi error platform detection
+      // Fallback jika 'dart:io' tidak tersedia (walaupun harusnya aman di Flutter)
       return _localUrl;
     }
   }
 
   // ======================================================
-  // 3. DEFINISI ENDPOINT API
+  // 3. DEFINISI ENDPOINT API & BASE URL GAMBAR
   // ======================================================
 
+  // Base URL Dinamis untuk Gambar (Base URL API + folder 'images/')
+  static String get baseImageUrl {
+    // Contoh: http://192.168.1.32/api_hp/images/
+    return "${baseUrl}images/"; 
+  }
+  
+  // Properti untuk mendapatkan IP murni (digunakan di Smartphone.fromJson)
+  static String get baseIp => _localHostIp; // <-- KOREKSI DILAKUKAN DI SINI
+  
   static String get login => "${baseUrl}login.php";
   static String get register => "${baseUrl}register.php";
   static String get getPhoneDetail => "${baseUrl}get_phone_detail.php";
@@ -60,42 +68,37 @@ class ApiService {
   static String get getPhonesByBrand => "${baseUrl}get_phones_by_brand.php";
   static String get createPhone => "${baseUrl}create_phone.php";
 
+
   // ======================================================
   // 4. FUNGSI FETCH DATA
   // ======================================================
 
   Future<List<Smartphone>> fetchPhonesByBrand(String brand) async {
     final url = Uri.parse("$getPhonesByBrand?brand=$brand");
-    print("Fetching data from: $url"); // Debugging
+    print("Fetching data from: $url");
 
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final dynamic decoded = jsonDecode(response.body);
 
-      // ❗ Pengecekan Error API: Jika API mengirim Map (error JSON), return list kosong
       if (decoded is Map && decoded.containsKey('error')) {
         print("API Error: ${decoded['error']}");
         return []; 
       }
       
-      // Jika API sukses mengirim List → lanjut ke parsing
       if (decoded is List) {
+        // Map data ke List<Smartphone> menggunakan Smartphone.fromJson
         return decoded.map<Smartphone>((item) {
-          // Pengecekan agar image_url tidak null atau kosong
-          if (item['image_url'] == null || item['image_url'].toString().isEmpty) {
-            item['image_url'] = ""; 
-          }
+          // Meneruskan 'brand' sangat penting untuk konstruksi URL gambar yang benar
           return Smartphone.fromJson(item, brand);
         }).toList();
       }
 
-      // Jika format lain → kembalikan list kosong
       print("API response format unexpected: $decoded");
       return [];
 
     } else {
-      // Jika status code bukan 200 (misalnya 404, 500)
       throw Exception("Gagal mengambil data HP: HTTP Status ${response.statusCode}");
     }
   }

@@ -1,23 +1,22 @@
-// detail_screen.dart (Modifikasi dengan Desain Baru)
+// detail_screen.dart (Versi Final Siap Tempel)
 
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/edit_phone_screen.dart';
+import 'package:flutter_application_1/screens/crud/edit_phone_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'session.dart';
-
+import '../../utils/session.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class DetailScreen extends StatefulWidget {
   final String brand;
   final String id;
-  // Callback untuk me-refresh list di BrandScreen
   final VoidCallback? refreshCallback;
 
   const DetailScreen({
     super.key,
     required this.brand,
     required this.id,
-    this.refreshCallback, // Tambahkan parameter baru
+    this.refreshCallback,
   });
 
   @override
@@ -35,18 +34,42 @@ class _DetailScreenState extends State<DetailScreen> {
     fetchDetail();
   }
 
+  // --- FUNGSI MEMBUKA URL EKSTERNAL ---
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal membuka tautan pembelian: $url')),
+      );
+      print('Gagal membuka tautan: $url');
+    }
+  }
+  // -------------------------------------
+
   Future<void> fetchDetail() async {
+    // PASTIKAN IP ADDRESS INI SAMA DENGAN IP XAMPP ANDA
     final url = Uri.parse(
-  'http://192.168.1.18/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
-);
+      'http://192.168.1.32/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
+    );
 
     try {
       final resp = await http.get(url);
       if (resp.statusCode == 200) {
         final j = json.decode(resp.body);
         if (!mounted) return;
+
+        var fetchedData = j as Map<String, dynamic>;
+
+        // Tambahkan kunci 'purchase_url' jika tidak ada, untuk memastikan variabel di build() tidak error.
+        if (!fetchedData.containsKey('purchase_url')) {
+          fetchedData['purchase_url'] = '';
+        }
+
         setState(() {
-          data = j as Map<String, dynamic>;
+          data = fetchedData;
           loading = false;
         });
       } else {
@@ -64,6 +87,8 @@ class _DetailScreenState extends State<DetailScreen> {
       });
     }
   }
+
+  // ... (Fungsi _deletePhone dan _showDeleteDialog tidak diubah) ...
 
   Future<void> _deletePhone() async {
     showDialog(
@@ -89,9 +114,8 @@ class _DetailScreenState extends State<DetailScreen> {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text('Data berhasil dihapus')));
-        // Panggil callback refresh list di BrandScreen
         widget.refreshCallback?.call();
-        Navigator.pop(context); // Kembali ke halaman sebelumnya
+        Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal menghapus: ${data['message']}')),
@@ -135,25 +159,22 @@ class _DetailScreenState extends State<DetailScreen> {
   void _goToEditScreen() {
     if (data == null) return;
 
-    // Navigasi ke EditPhoneScreen dengan mengirim data HP saat ini
+    // NAVIGASI DENGAN TANDA '!' UNTUK MENGHILANGKAN WARNING NULL SAFETY KARENA SUDAH DICEK DI ATAS
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) =>
-            EditPhoneScreen(brand: widget.brand, initialData: data!),
+        builder: (context) {
+          return EditPhoneScreen(brand: widget.brand, initialData: data!);
+        },
       ),
     ).then((result) {
-      // Jika hasil dari EditScreen adalah 'true', berarti data berhasil diubah/dihapus
       if (result == true) {
-        // Panggil callback refresh list di BrandScreen
         widget.refreshCallback?.call();
-        // Lakukan fetch detail lagi untuk menampilkan data terbaru di halaman ini
         fetchDetail();
       }
     });
   }
 
-  // Helper untuk membuat baris detail yang seragam
   Widget _buildDetailRow(String title, dynamic value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -169,12 +190,7 @@ class _DetailScreenState extends State<DetailScreen> {
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            value.toString(),
-            style: const TextStyle(
-              fontSize: 15,
-            ),
-          ),
+          Text(value.toString(), style: const TextStyle(fontSize: 15)),
           const Divider(height: 16),
         ],
       ),
@@ -186,18 +202,41 @@ class _DetailScreenState extends State<DetailScreen> {
     final primaryColor = Colors.blue.shade700;
     final secondaryColor = Colors.blue.shade300;
 
+    // --- PERBAIKAN: Mengambil URL dan membersihkan spasi tersembunyi dengan .trim() ---
+    final String purchaseUrlRaw = data?['purchase_url'] ?? '';
+    final String cleanedPurchaseUrl = purchaseUrlRaw.trim();
+
+    // --- DEBUGGING CONSOLE FINAL ---
+    print('Purchase URL (Raw): $purchaseUrlRaw');
+    print('Purchase URL (Cleaned): $cleanedPurchaseUrl');
+    print('Apakah Tombol Keranjang Muncul? ${data != null && cleanedPurchaseUrl.isNotEmpty}',
+    );
+    // -------------------------
+
     return Scaffold(
-      extendBodyBehindAppBar: true, // Agar body bisa di belakang AppBar
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: Text(
           data?['nama_model'] ?? 'Detail',
           style: const TextStyle(color: Colors.white),
         ),
-        backgroundColor: Colors.transparent, // Transparan agar gradient terlihat
+        backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
 
         actions: [
+          // --- TOMBOL BELI (IKON KERANJANG MERAH) ---
+          // Kondisi dicek pada cleanedPurchaseUrl
+          if (data != null && cleanedPurchaseUrl.isNotEmpty)
+            IconButton(
+              // Diubah ke warna merah agar terlihat jelas
+              icon: const Icon(Icons.shopping_cart, color: Colors.red),
+              // Menggunakan cleanedPurchaseUrl untuk membuka tautan
+              onPressed: () => _launchUrl(cleanedPurchaseUrl),
+              tooltip: 'Beli Sekarang',
+            ),
+
+          // ----------------------------------------
           if (UserSession.role == 'admin') ...[
             // Tombol EDIT
             IconButton(
@@ -208,8 +247,7 @@ class _DetailScreenState extends State<DetailScreen> {
             // Tombol Hapus
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed:
-                  data != null ? () => _showDeleteDialog(context) : null,
+              onPressed: data != null ? () => _showDeleteDialog(context) : null,
               tooltip: 'Hapus Data',
             ),
           ],
@@ -224,8 +262,10 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
         child: loading
-            ? const Center(child: CircularProgressIndicator(color: Colors.white))
-            : errorMessage.isNotEmpty
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
+                : errorMessage.isNotEmpty
                 ? Center(
                     child: Text(
                       errorMessage,
@@ -233,7 +273,12 @@ class _DetailScreenState extends State<DetailScreen> {
                     ),
                   )
                 : SingleChildScrollView(
-                    padding: const EdgeInsets.only(top: 100, left: 24, right: 24, bottom: 24),
+                    padding: const EdgeInsets.only(
+                      top: 100,
+                      left: 24,
+                      right: 24,
+                      bottom: 24,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -272,14 +317,20 @@ class _DetailScreenState extends State<DetailScreen> {
                                 ),
                               ),
                               const Divider(height: 30, thickness: 2),
-                              
+
                               _buildDetailRow('Harga', data?['price'] ?? '-'),
                               _buildDetailRow('Body', data?['body'] ?? '-'),
                               _buildDetailRow('Display', data?['display'] ?? '-'),
                               _buildDetailRow('Platform', data?['platform'] ?? '-'),
                               _buildDetailRow('Memory', data?['memory'] ?? '-'),
-                              _buildDetailRow('Main Camera', data?['main_camera'] ?? '-'),
-                              _buildDetailRow('Selfie Camera', data?['selfie_camera'] ?? '-'),
+                              _buildDetailRow(
+                                'Main Camera',
+                                data?['main_camera'] ?? '-',
+                              ),
+                              _buildDetailRow(
+                                'Selfie Camera',
+                                data?['selfie_camera'] ?? '-',
+                              ),
                               _buildDetailRow('Comms', data?['comms'] ?? '-'),
                               _buildDetailRow('Features', data?['features'] ?? '-'),
                               _buildDetailRow('Battery', data?['battery'] ?? '-'),

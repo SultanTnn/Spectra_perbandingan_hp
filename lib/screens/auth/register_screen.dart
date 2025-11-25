@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:ui'; // Untuk efek Glassmorphism
 import 'package:google_fonts/google_fonts.dart';
-import 'api_service.dart';
+import '../../service/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -25,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // --- DEFINISI WARNA (Dibuat Static agar tidak Null) ---
   static const Color primaryColor = Color(0xFF553C9A);
   static const Color secondaryColor = Color(0xFF6C63FF);
+  // ignore: unused_field
   static const Color blueColor = Color(0xFF0175C2);
   // ----------------------------------------------------
 

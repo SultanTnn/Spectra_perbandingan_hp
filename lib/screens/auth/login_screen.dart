@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/screen/api_service.dart';
+import 'package:flutter_application_1/service/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:ui'; // Diperlukan untuk ImageFilter (Efek Kaca)
+import 'dart:ui'; 
 import 'package:google_fonts/google_fonts.dart';
 import 'register_screen.dart';
-import 'screen_home.dart';
-import 'session.dart';
+import '../home/screen_home.dart';
+import '../../utils/session.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

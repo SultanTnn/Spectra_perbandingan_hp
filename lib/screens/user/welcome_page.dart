@@ -6,11 +6,11 @@ import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // Import file lokal
-import 'api_service.dart';
-import 'smartphone.dart';
-import 'login_screen.dart';
-import 'register_screen.dart';
-import 'session.dart';
+import '../../service/api_service.dart';
+import '../../models/smartphone.dart';
+import '../auth/login_screen.dart';
+import '../auth/register_screen.dart';
+import '../../utils/session.dart';
 
 // --- KELAS BANTUAN UNTUK PENCARIAN ---
 class SearchOption {

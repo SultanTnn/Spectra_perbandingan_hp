@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../screen/api_service.dart';
-import '../screen/smartphone.dart';
+import '../../service/api_service.dart';
+import '../../models/smartphone.dart';
 
 class PhoneListScreen extends StatefulWidget {
   final String brand;

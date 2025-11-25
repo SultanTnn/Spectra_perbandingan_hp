@@ -1,6 +1,5 @@
-// edit_phone_screen.dart
-
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/service/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -62,7 +61,10 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
     });
 
     try {
-      final url = Uri.parse('http://localhost/api_hp/update_phone.php');
+      // ❗ PERBAIKAN DI SINI: Menggunakan ApiService.updatePhone
+      // Ini akan menghasilkan URL yang benar (misalnya 10.0.2.2/api_hp/update_phone.php)
+      final url = Uri.parse(ApiService.updatePhone); 
+      
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

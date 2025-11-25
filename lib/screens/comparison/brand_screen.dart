@@ -3,11 +3,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'package:flutter_application_1/comparison_manager.dart';
-import 'package:flutter_application_1/screen/compare_screen.dart';
-import 'package:flutter_application_1/screen/detail_screen.dart';
-import 'package:flutter_application_1/screen/create_phone_screen.dart';
-import 'session.dart';
+import 'package:flutter_application_1/utils/comparison_manager.dart';
+import 'package:flutter_application_1/screens/comparison/compare_screen.dart';
+import 'package:flutter_application_1/screens/crud/detail_screen.dart';
+import 'package:flutter_application_1/screens/crud/create_phone_screen.dart';
+import '../../utils/session.dart';
 
 class BrandScreen extends StatefulWidget {
   final String brand;
@@ -28,7 +28,7 @@ class _BrandScreenState extends State<BrandScreen> {
     if (kIsWeb) {
       return "http://localhost/api_hp/";
     } else {
-      return "http://192.168.43.60/api_hp/"; // IP LAN laptop kamu
+      return "http://192.168.1.32/api_hp/"; // IP LAN laptop kamu
     }
   }
 

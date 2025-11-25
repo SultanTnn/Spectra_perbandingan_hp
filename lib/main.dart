@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screen/welcome_page.dart'; // Mengarah ke halaman WelcomePage
+import 'screens/user/welcome_page.dart'; // Mengarah ke halaman WelcomePage
 
 void main() {
   runApp(const MyApp());

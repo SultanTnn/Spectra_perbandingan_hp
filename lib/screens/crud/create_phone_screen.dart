@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../screen/api_service.dart'; // pastikan import
+import '../../service/api_service.dart'; // pastikan import
 
 class CreatePhoneScreen extends StatefulWidget {
   final String brand;
@@ -34,7 +34,7 @@ class _CreatePhoneScreenState extends State<CreatePhoneScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final url = Uri.parse(ApiService.createPhone!); // <--- FIX DI SINI
+      final url = Uri.parse(ApiService.createPhone); // <--- FIX DI SINI
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
