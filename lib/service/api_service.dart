@@ -2,23 +2,22 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/models/smartphone.dart';
-import 'dart:io' show Platform; 
+import 'dart:io' show Platform;
 
 class ApiService {
-
   // ======================================================
   // 1. KONFIGURASI IP LOKAL
   // ======================================================
-  
+
   // 💡 IP PC Anda (Host)
-  static const String _localHostIp = "http://192.168.1.32"; 
-  
-  static const String _apiFolder = "/api_hp/"; 
-  
+  static const String _localHostIp = "http://192.168.43.60";
+
+  static const String _apiFolder = "/api_hp/";
+
   // URL untuk Android Emulator (IP Khusus)
   static const String _emulatorUrl = "http://10.0.2.2$_apiFolder";
 
-  // URL menggunakan IP Lokal PC 
+  // URL menggunakan IP Lokal PC
   static String get _localUrl => "$_localHostIp$_apiFolder";
 
   // ======================================================
@@ -26,22 +25,20 @@ class ApiService {
   // ======================================================
 
   static String get baseUrl {
-    
     // 1. Lingkungan Web: Paksa menggunakan IP Lokal PC Anda
     if (kIsWeb) {
-      return _localUrl; 
-    } 
-    
+      return _localUrl;
+    }
+
     // 2. Lingkungan Mobile/Desktop
     try {
       if (Platform.isAndroid) {
         // Prioritaskan Android Emulator (10.0.2.2)
         return _emulatorUrl;
-      } 
-      
+      }
+
       // 3. iOS Simulator / Perangkat Fisik non-Android / Desktop
       return _localUrl;
-
     } catch (e) {
       // Fallback jika 'dart:io' tidak tersedia (walaupun harusnya aman di Flutter)
       return _localUrl;
@@ -55,19 +52,18 @@ class ApiService {
   // Base URL Dinamis untuk Gambar (Base URL API + folder 'images/')
   static String get baseImageUrl {
     // Contoh: http://192.168.1.32/api_hp/images/
-    return "${baseUrl}images/"; 
+    return "${baseUrl}images/";
   }
-  
+
   // Properti untuk mendapatkan IP murni (digunakan di Smartphone.fromJson)
   static String get baseIp => _localHostIp; // <-- KOREKSI DILAKUKAN DI SINI
-  
+
   static String get login => "${baseUrl}login.php";
   static String get register => "${baseUrl}register.php";
   static String get getPhoneDetail => "${baseUrl}get_phone_detail.php";
   static String get updatePhone => "${baseUrl}update_phone.php";
   static String get getPhonesByBrand => "${baseUrl}get_phones_by_brand.php";
   static String get createPhone => "${baseUrl}create_phone.php";
-
 
   // ======================================================
   // 4. FUNGSI FETCH DATA
@@ -84,9 +80,9 @@ class ApiService {
 
       if (decoded is Map && decoded.containsKey('error')) {
         print("API Error: ${decoded['error']}");
-        return []; 
+        return [];
       }
-      
+
       if (decoded is List) {
         // Map data ke List<Smartphone> menggunakan Smartphone.fromJson
         return decoded.map<Smartphone>((item) {
@@ -97,9 +93,10 @@ class ApiService {
 
       print("API response format unexpected: $decoded");
       return [];
-
     } else {
-      throw Exception("Gagal mengambil data HP: HTTP Status ${response.statusCode}");
+      throw Exception(
+        "Gagal mengambil data HP: HTTP Status ${response.statusCode}",
+      );
     }
   }
 }

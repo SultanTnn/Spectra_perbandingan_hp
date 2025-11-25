@@ -28,7 +28,7 @@ class _BrandScreenState extends State<BrandScreen> {
     if (kIsWeb) {
       return "http://localhost/api_hp/";
     } else {
-      return "http://192.168.1.32/api_hp/"; // IP LAN laptop kamu
+      return "http://192.168.43.60/api_hp/"; // IP LAN laptop kamu
     }
   }
 

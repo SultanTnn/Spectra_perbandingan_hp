@@ -23,7 +23,7 @@ class _CompareScreenState extends State<CompareScreen> {
     if (kIsWeb) {
       return "http://localhost/api_hp/";
     } else {
-      return "http://192.168.1.32/api_hp/";
+      return "http://192.168.43.60/api_hp/";
     }
   }
 
@@ -37,12 +37,8 @@ class _CompareScreenState extends State<CompareScreen> {
     final url = Uri.parse("${baseUrl}get_comparison.php");
 
     // payload => [{brand: Samsung, id: 35}, ...]
-    final List<Map<String, String>> payload =
-        widget.phonesToCompare.map((p) {
-      return {
-        "brand": p["brand"]!,
-        "id": p["id"]!,
-      };
+    final List<Map<String, String>> payload = widget.phonesToCompare.map((p) {
+      return {"brand": p["brand"]!, "id": p["id"]!};
     }).toList();
 
     try {
@@ -59,8 +55,7 @@ class _CompareScreenState extends State<CompareScreen> {
 
         if (jsonResp is List) {
           setState(() {
-            comparisonData =
-                List<Map<String, dynamic>>.from(jsonResp);
+            comparisonData = List<Map<String, dynamic>>.from(jsonResp);
             loading = false;
           });
         } else {
@@ -72,8 +67,7 @@ class _CompareScreenState extends State<CompareScreen> {
       } else {
         if (!mounted) return;
         setState(() {
-          errorMessage =
-              "Gagal memuat data. Status: ${resp.statusCode}";
+          errorMessage = "Gagal memuat data. Status: ${resp.statusCode}";
           loading = false;
         });
       }
@@ -143,8 +137,7 @@ class _CompareScreenState extends State<CompareScreen> {
               ...comparisonData.map((phone) {
                 return Expanded(
                   child: Padding(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
                       phone[specKey]?.toString() ?? "-",
                       textAlign: TextAlign.left,
@@ -166,46 +159,44 @@ class _CompareScreenState extends State<CompareScreen> {
       appBar: AppBar(title: const Text("Perbandingan HP 📊")),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-
           : errorMessage.isNotEmpty
-              ? Center(child: Text(errorMessage))
-
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // Header nama HP
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(width: 120),
-                            ...comparisonData.map((phone) {
-                              return Expanded(
-                                child: Text(
-                                  phone["nama_model"] ?? "N/A",
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  textAlign: TextAlign.center,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              );
-                            }).toList(),
-                          ],
-                        ),
-                      ),
-
-                      // Body table
-                      ...specs
-                          .where((s) => s != "nama_model")
-                          .map(_buildComparisonRow),
-                    ],
+          ? Center(child: Text(errorMessage))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Header nama HP
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(width: 120),
+                        ...comparisonData.map((phone) {
+                          return Expanded(
+                            child: Text(
+                              phone["nama_model"] ?? "N/A",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          );
+                        }).toList(),
+                      ],
+                    ),
                   ),
-                ),
+
+                  // Body table
+                  ...specs
+                      .where((s) => s != "nama_model")
+                      .map(_buildComparisonRow),
+                ],
+              ),
+            ),
     );
   }
 }

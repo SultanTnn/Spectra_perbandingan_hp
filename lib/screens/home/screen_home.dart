@@ -24,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   // ⚠️ PENTING: GANTI IP ADDRESS INI DENGAN IP KOMPUTER ANDA!
   // Ini harus sesuai dengan BASE_URL API Anda.
   static const String BASE_URL =
-      'http://192.168.1.32/api_hp'; // <--- GANTI IP ANDA
+      'http://192.168.43.60/api_hp'; // <--- GANTI IP ANDA
 
   // 🔹 KEMBALI KE STRING: Hanya menyimpan nama merek
   List<String> brands = [];
