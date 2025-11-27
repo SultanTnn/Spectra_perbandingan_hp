@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:shimmer/shimmer.dart';
 import 'dart:async';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart'; 
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../comparison/brand_screen.dart';
 import '../auth/login_screen.dart';
@@ -17,7 +17,7 @@ import '../profile_screen.dart';
 
 class AppLanguage {
   static const String keyLanguageCode = 'app_language_code';
-  static const String keyDarkMode = 'is_dark_mode'; 
+  static const String keyDarkMode = 'is_dark_mode';
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'id': {
@@ -38,12 +38,14 @@ class AppLanguage {
       'cari_button': 'Cari',
       'loading_merek': 'Memuat Merek HP...',
       'gagal_merek': 'Gagal memuat data brand.',
-      'error_koneksi': 'Terjadi kesalahan koneksi API brand. Pastikan BASE_URL benar:',
+      'error_koneksi':
+          'Terjadi kesalahan koneksi API brand. Pastikan BASE_URL benar:',
       'coba_lagi': 'Coba lagi',
       'produk_ditemukan': 'Hasil Produk untuk "',
       'ditemukan': ' ditemukan)',
       'brand_detail_ketuk': 'Lihat semua produk & bandingkan',
-      'input_kosong_snack': 'Masukkan nama brand atau produk untuk membandingkan!',
+      'input_kosong_snack':
+          'Masukkan nama brand atau produk untuk membandingkan!',
       'mode_tampilan': 'Mode Tampilan',
       'mode_terang': 'Mode Terang',
       'mode_gelap': 'Mode Gelap',
@@ -85,7 +87,8 @@ class AppLanguage {
       'cari_button': 'Search',
       'loading_merek': 'Loading Phone Brands...',
       'gagal_merek': 'Failed to load brand data.',
-      'error_koneksi': 'API connection error for brands. Make sure BASE_URL is correct:',
+      'error_koneksi':
+          'API connection error for brands. Make sure BASE_URL is correct:',
       'coba_lagi': 'Try Again',
       'produk_ditemukan': 'Product Results for "',
       'ditemukan': ' found)',
@@ -132,12 +135,14 @@ class AppLanguage {
       'cari_button': 'Cari',
       'loading_merek': 'Memuat Jenama Telefon...',
       'gagal_merek': 'Gagal memuat data jenama.',
-      'error_koneksi': 'Ralat sambungan API untuk jenama. Pastikan BASE_URL betul:',
+      'error_koneksi':
+          'Ralat sambungan API untuk jenama. Pastikan BASE_URL betul:',
       'coba_lagi': 'Cuba Lagi',
       'produk_ditemukan': 'Keputusan Produk untuk "',
       'ditemukan': ' dijumpai)',
       'brand_detail_ketuk': 'Lihat semua produk & bandingkan',
-      'input_kosong_snack': 'Masukkan nama jenama atau produk untuk membandingkan!',
+      'input_kosong_snack':
+          'Masukkan nama jenama atau produk untuk membandingkan!',
       'mode_tampilan': 'Mod Paparan',
       'mode_terang': 'Mod Terang',
       'mode_gelap': 'Mod Gelap',
@@ -160,13 +165,15 @@ class AppLanguage {
       'notif_subtitle': 'Terima berita & kemas kini perbandingan',
       'privasi_keamanan': 'Privasi & Keselamatan',
       'tidak_ada_brand': 'Tiada Jenama tersedia.',
-    }
+    },
   };
 
-  static String currentLanguageCode = 'id'; 
-  
+  static String currentLanguageCode = 'id';
+
   static String get(String key) {
-    return _localizedValues[currentLanguageCode]?[key] ?? _localizedValues['id']![key] ?? key;
+    return _localizedValues[currentLanguageCode]?[key] ??
+        _localizedValues['id']![key] ??
+        key;
   }
 }
 
@@ -179,7 +186,8 @@ class Smartphone {
   factory Smartphone.fromJson(Map<String, dynamic> json) {
     return Smartphone(
       name: json['name'] as String? ?? AppLanguage.get('nama_tidak_diketahui'),
-      brand: json['brand'] as String? ?? AppLanguage.get('brand_tidak_diketahui'),
+      brand:
+          json['brand'] as String? ?? AppLanguage.get('brand_tidak_diketahui'),
     );
   }
 }
@@ -191,39 +199,47 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
-  
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   // --- STATE VARIABLES ---
   List<String> brands = [];
-  bool loading = true; 
+  bool loading = true;
   String errorMessage = '';
   List<Smartphone> searchResults = [];
-  bool isSearchingProducts = false; 
+  bool isSearchingProducts = false;
   final TextEditingController searchController = TextEditingController();
   String query = '';
   bool _sessionLoaded = false;
   String? _lastProfileImageUrl;
   int _profileImageCacheKey = 0;
-  List<String> _searchHints = []; 
+  List<String> _searchHints = [];
   int _currentHintIndex = 0;
   Timer? _hintTimer;
-  bool _isDarkModeActive = false; 
+  bool _isDarkModeActive = false;
 
   // --- KONSTANTA WARNA DINAMIS BERDASARKAN TEMA ---
-  Color _getPrimaryColor() => _isDarkModeActive ? const Color(0xFF9370DB) : const Color(0xFF4B0082); 
-  Color _getAccentColor() => _isDarkModeActive ? const Color(0xFF1E90FF) : const Color(0xFF6A5ACD); 
+  Color _getPrimaryColor() =>
+      _isDarkModeActive ? const Color(0xFF9370DB) : const Color(0xFF4B0082);
+  Color _getAccentColor() =>
+      _isDarkModeActive ? const Color(0xFF1E90FF) : const Color(0xFF6A5ACD);
   Color _getTextColor() => _isDarkModeActive ? Colors.white : Colors.white;
-  Color _getSubTextColor() => _isDarkModeActive ? Colors.white70 : Colors.white70;
-  Color _getCardColor() => _isDarkModeActive ? const Color(0xFF2C2C2C) : Colors.white; 
-  Color _getBrandTextColor() => _isDarkModeActive ? Colors.white : const Color(0xFF333333); 
-  Color _getBrandSubTextColor() => _isDarkModeActive ? Colors.grey.shade400 : const Color(0xFF888888); 
-  Color _getBackgroundColor() => _isDarkModeActive ? const Color(0xFF121212) : _getPrimaryColor(); 
+  Color _getSubTextColor() =>
+      _isDarkModeActive ? Colors.white70 : Colors.white70;
+  Color _getCardColor() =>
+      _isDarkModeActive ? const Color(0xFF2C2C2C) : Colors.white;
+  Color _getBrandTextColor() =>
+      _isDarkModeActive ? Colors.white : const Color(0xFF333333);
+  Color _getBrandSubTextColor() =>
+      _isDarkModeActive ? Colors.grey.shade400 : const Color(0xFF888888);
+  Color _getBackgroundColor() =>
+      _isDarkModeActive ? const Color(0xFF121212) : _getPrimaryColor();
   Color _getErrorIconColor() => _getPrimaryColor().withOpacity(0.7);
-  Color _getShimmerBaseColor() => _isDarkModeActive ? Colors.grey.shade800 : Colors.grey.shade200;
-  Color _getShimmerHighlightColor() => _isDarkModeActive ? Colors.grey.shade700 : Colors.grey.shade100;
-  
-  static const String BASE_URL =
-      'http://192.168.1.4/api_hp'; 
+  Color _getShimmerBaseColor() =>
+      _isDarkModeActive ? Colors.grey.shade800 : Colors.grey.shade200;
+  Color _getShimmerHighlightColor() =>
+      _isDarkModeActive ? Colors.grey.shade700 : Colors.grey.shade100;
+
+  static const String BASE_URL = 'http://192.168.1.6/api_hp';
 
   // Animasi Background Gradient
   late AnimationController _animationController;
@@ -233,7 +249,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   late Animation<Color?> _color2Animation;
 
   final List<List<Color>> _gradientColorPairs = [
-    [const Color(0xFF4B0082).withOpacity(0.9), const Color(0xFF6A5ACD).withOpacity(0.9)],
+    [
+      const Color(0xFF4B0082).withOpacity(0.9),
+      const Color(0xFF6A5ACD).withOpacity(0.9),
+    ],
     [const Color(0xFF2C0B4F), const Color(0xFF1E90FF)],
     [const Color(0xFF6A0DAD), const Color(0xFF483D8B)],
   ];
@@ -248,32 +267,31 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   // MEMUAT SEMUA SETTINGS (Bahasa & Tema)
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    
+
     // Load Language
     final code = prefs.getString(AppLanguage.keyLanguageCode) ?? 'id';
-    AppLanguage.currentLanguageCode = code; 
-    
+    AppLanguage.currentLanguageCode = code;
+
     // Load Theme
-    final isDark = prefs.getBool(AppLanguage.keyDarkMode) ?? false; 
-    
+    final isDark = prefs.getBool(AppLanguage.keyDarkMode) ?? false;
+
     _updateSearchHints();
 
     if (mounted) {
       setState(() {
-        _isDarkModeActive = isDark; 
+        _isDarkModeActive = isDark;
       });
     }
   }
 
   void _updateSearchHints() {
-     _searchHints = [
+    _searchHints = [
       _getTranslatedText('cari_hint_1'),
       _getTranslatedText('cari_hint_2'),
       _getTranslatedText('cari_hint_3'),
       _getTranslatedText('cari_hint_4'),
     ];
   }
-
 
   @override
   void initState() {
@@ -282,16 +300,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _loadSettings().then((_) {
       _loadSessionData(); // Memuat sesi setelah settings
       fetchBrands();
-      _startGradientAnimation(); 
+      _startGradientAnimation();
     });
-    
+
     searchController.addListener(() {
       final newQuery = searchController.text;
       setState(() {
         query = newQuery;
       });
       if (newQuery.trim().isNotEmpty) {
-        searchProducts(newQuery); 
+        searchProducts(newQuery);
       } else {
         setState(() {
           searchResults = [];
@@ -300,29 +318,76 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         _startHintTimer();
       }
     });
-    
-    _startHintTimer(); 
+
+    _startHintTimer();
 
     // Inisialisasi Animasi
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 4),
-    )..addListener(() {
-      setState(() {});
-    });
-    
+    _animationController =
+        AnimationController(vsync: this, duration: const Duration(seconds: 4))
+          ..addListener(() {
+            setState(() {});
+          });
+
     _topAlignmentAnimation = TweenSequence<AlignmentGeometry>([
-      TweenSequenceItem(tween: Tween<AlignmentGeometry>(begin: Alignment.topLeft, end: Alignment.topRight), weight: 1),
-      TweenSequenceItem(tween: Tween<AlignmentGeometry>(begin: Alignment.topRight, end: Alignment.bottomRight), weight: 1),
-      TweenSequenceItem(tween: Tween<AlignmentGeometry>(begin: Alignment.bottomRight, end: Alignment.bottomLeft), weight: 1),
-      TweenSequenceItem(tween: Tween<AlignmentGeometry>(begin: Alignment.bottomLeft, end: Alignment.topLeft), weight: 1),
+      TweenSequenceItem(
+        tween: Tween<AlignmentGeometry>(
+          begin: Alignment.topLeft,
+          end: Alignment.topRight,
+        ),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<AlignmentGeometry>(
+          begin: Alignment.topRight,
+          end: Alignment.bottomRight,
+        ),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<AlignmentGeometry>(
+          begin: Alignment.bottomRight,
+          end: Alignment.bottomLeft,
+        ),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<AlignmentGeometry>(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topLeft,
+        ),
+        weight: 1,
+      ),
     ]).animate(_animationController);
 
     _bottomAlignmentAnimation = TweenSequence<AlignmentGeometry>([
-      TweenSequenceItem(tween: Tween<AlignmentGeometry>(begin: Alignment.bottomRight, end: Alignment.bottomLeft), weight: 1),
-      TweenSequenceItem(tween: Tween<AlignmentGeometry>(begin: Alignment.bottomLeft, end: Alignment.topLeft), weight: 1),
-      TweenSequenceItem(tween: Tween<AlignmentGeometry>(begin: Alignment.topLeft, end: Alignment.topRight), weight: 1),
-      TweenSequenceItem(tween: Tween<AlignmentGeometry>(begin: Alignment.topRight, end: Alignment.bottomRight), weight: 1),
+      TweenSequenceItem(
+        tween: Tween<AlignmentGeometry>(
+          begin: Alignment.bottomRight,
+          end: Alignment.bottomLeft,
+        ),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<AlignmentGeometry>(
+          begin: Alignment.bottomLeft,
+          end: Alignment.topLeft,
+        ),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<AlignmentGeometry>(
+          begin: Alignment.topLeft,
+          end: Alignment.topRight,
+        ),
+        weight: 1,
+      ),
+      TweenSequenceItem(
+        tween: Tween<AlignmentGeometry>(
+          begin: Alignment.topRight,
+          end: Alignment.bottomRight,
+        ),
+        weight: 1,
+      ),
     ]).animate(_animationController);
   }
 
@@ -337,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   // --- LOGIKA TIMER DAN ANIMASI ---
   void _startHintTimer() {
-    _hintTimer?.cancel(); 
+    _hintTimer?.cancel();
     if (_searchHints.isEmpty) {
       _updateSearchHints();
     }
@@ -364,7 +429,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         return;
       }
       setState(() {
-        _currentColorPairIndex = (_currentColorPairIndex + 1) % _gradientColorPairs.length;
+        _currentColorPairIndex =
+            (_currentColorPairIndex + 1) % _gradientColorPairs.length;
         _animationController.reset();
         _animationController.forward();
       });
@@ -377,7 +443,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   // ==========================================================
   Future<void> _loadSessionData() async {
     // Memuat ulang data sesi, termasuk profileImageUrl terbaru
-    await UserSession.loadData(); 
+    await UserSession.loadData();
     await Future.delayed(const Duration(milliseconds: 100));
     if (!mounted) return;
     setState(() {
@@ -414,16 +480,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     _hintTimer?.cancel();
 
     final url = Uri.parse('$BASE_URL/search_products.php?query=$query');
-    
+
     try {
       final resp = await http.get(url).timeout(const Duration(seconds: 5));
 
-      if (!mounted) return; 
+      if (!mounted) return;
 
       if (resp.statusCode == 200) {
         final List<dynamic> data = json.decode(resp.body);
         setState(() {
-          searchResults = data.map((json) => Smartphone.fromJson(json)).toList();
+          searchResults = data
+              .map((json) => Smartphone.fromJson(json))
+              .toList();
           isSearchingProducts = false;
         });
       } else {
@@ -452,7 +520,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         if (!mounted) return;
         setState(() {
           brands = List<String>.from(data.map((b) => b.toString()));
-          
+
           brands.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
           loading = false;
           errorMessage = '';
@@ -460,7 +528,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       } else {
         if (!mounted) return;
         setState(() {
-          errorMessage = '${_getTranslatedText('gagal_merek')} Status: ${resp.statusCode}';
+          errorMessage =
+              '${_getTranslatedText('gagal_merek')} Status: ${resp.statusCode}';
           loading = false;
         });
       }
@@ -485,8 +554,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   // Navigasi ke Settings dan memuat ulang jika ada perubahan (bahasa/tema)
   void _navigateToSettings() async {
-    Navigator.pop(context); 
-    
+    Navigator.pop(context);
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const SettingsScreen()),
@@ -494,7 +563,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     if (result == true) {
       await _loadSettings(); // Memuat bahasa DAN tema baru dari SharedPreferences
-      fetchBrands(); 
+      fetchBrands();
       setState(() {});
     }
   }
@@ -548,33 +617,43 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     }
   }
 
-
   // --- WIDGET BUILDER ---
   @override
   Widget build(BuildContext context) {
-
     // Mengambil warna berdasarkan tema aktif
     final Color dynamicPrimary = _getPrimaryColor();
     final Color dynamicAccent = _getAccentColor();
     // final Color dynamicCardColor = _getCardColor(); // unused after aesthetic changes
-    
-    final List<Color> currentGradientColors = _isDarkModeActive
-        ? [dynamicPrimary, dynamicAccent] 
-        : _gradientColorPairs[_currentColorPairIndex]; 
 
-    _color1Animation = ColorTween(begin: currentGradientColors[0], end: currentGradientColors[0]).animate(_animationController);
-    _color2Animation = ColorTween(begin: currentGradientColors[1], end: currentGradientColors[1]).animate(_animationController);
+    final List<Color> currentGradientColors = _isDarkModeActive
+        ? [dynamicPrimary, dynamicAccent]
+        : _gradientColorPairs[_currentColorPairIndex];
+
+    _color1Animation = ColorTween(
+      begin: currentGradientColors[0],
+      end: currentGradientColors[0],
+    ).animate(_animationController);
+    _color2Animation = ColorTween(
+      begin: currentGradientColors[1],
+      end: currentGradientColors[1],
+    ).animate(_animationController);
 
     Widget contentList;
     final trimmedQuery = query.trim();
-    
+
     if (loading) {
-      contentList = _buildLoadingShimmer(count: 6, title: _getTranslatedText('loading_merek'));
+      contentList = _buildLoadingShimmer(
+        count: 6,
+        title: _getTranslatedText('loading_merek'),
+      );
     } else if (errorMessage.isNotEmpty) {
       contentList = _buildErrorView();
     } else if (trimmedQuery.isNotEmpty) {
       if (isSearchingProducts) {
-        contentList = _buildLoadingShimmer(count: 3, title: '${_getTranslatedText('cari_button')}...');
+        contentList = _buildLoadingShimmer(
+          count: 3,
+          title: '${_getTranslatedText('cari_button')}...',
+        );
       } else if (searchResults.isNotEmpty) {
         contentList = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -633,18 +712,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         ],
       );
     }
-    
+
     return Scaffold(
-      backgroundColor: _getBackgroundColor(), 
+      backgroundColor: _getBackgroundColor(),
       appBar: AppBar(
         title: Text(
-          'SPECTRA', 
-          style: GoogleFonts.montserrat( 
-            fontSize: 22, 
-            fontWeight: FontWeight.w900, 
-            color: _getTextColor(), 
+          'SPECTRA',
+          style: GoogleFonts.montserrat(
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+            color: _getTextColor(),
             letterSpacing: 2,
-            shadows: [ 
+            shadows: [
               Shadow(
                 offset: const Offset(0, 2),
                 blurRadius: 4,
@@ -656,7 +735,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         centerTitle: false,
         elevation: 0,
         backgroundColor: Colors.transparent,
-        iconTheme: IconThemeData(color: _getTextColor()), 
+        iconTheme: IconThemeData(color: _getTextColor()),
         actions: [
           // ==========================================================
           // PERBAIKAN: Aksi tombol profile di AppBar
@@ -668,9 +747,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               backgroundColor: Colors.white24,
               // Memastikan widget Avatar menggunakan data terbaru dari UserSession
               backgroundImage: (_lastProfileImageUrl != null && _sessionLoaded)
-                  ? NetworkImage('$_lastProfileImageUrl?cb=$_profileImageCacheKey')
+                  ? NetworkImage(
+                      '$_lastProfileImageUrl?cb=$_profileImageCacheKey',
+                    )
                   : null,
-              child: (_lastProfileImageUrl == null || _lastProfileImageUrl!.isEmpty || !_sessionLoaded)
+              child:
+                  (_lastProfileImageUrl == null ||
+                      _lastProfileImageUrl!.isEmpty ||
+                      !_sessionLoaded)
                   ? Icon(Icons.person, color: _getPrimaryColor(), size: 20)
                   : null,
             ),
@@ -681,13 +765,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
       ),
 
       drawer: Drawer(
-        backgroundColor: _getCardColor(), 
+        backgroundColor: _getCardColor(),
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
             DrawerHeader(
               margin: EdgeInsets.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 20.0,
+                vertical: 15.0,
+              ),
               decoration: BoxDecoration(
                 // Warna gradient dinamis
                 gradient: LinearGradient(
@@ -700,30 +787,30 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                    CircleAvatar(
-                      key: ValueKey(_profileImageCacheKey),
+                  CircleAvatar(
+                    key: ValueKey(_profileImageCacheKey),
                     radius: 30,
                     backgroundColor: Colors.white,
                     // Memastikan widget Avatar menggunakan data terbaru dari UserSession
                     backgroundImage:
-                      (_lastProfileImageUrl != null && _sessionLoaded)
-                      ? NetworkImage('$_lastProfileImageUrl?cb=$_profileImageCacheKey')
-                      : null,
+                        (_lastProfileImageUrl != null && _sessionLoaded)
+                        ? NetworkImage(
+                            '$_lastProfileImageUrl?cb=$_profileImageCacheKey',
+                          )
+                        : null,
                     child:
-                      (_lastProfileImageUrl == null ||
-                        _lastProfileImageUrl!.isEmpty ||
-                        !_sessionLoaded)
-                        ? Icon(
-                              Icons.person,
-                              color: dynamicPrimary,
-                              size: 36,
-                            )
+                        (_lastProfileImageUrl == null ||
+                            _lastProfileImageUrl!.isEmpty ||
+                            !_sessionLoaded)
+                        ? Icon(Icons.person, color: dynamicPrimary, size: 36)
                         : null,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     UserSession.namaLengkap ??
-                        (_sessionLoaded ? _getTranslatedText('selamat_datang') : 'Memuat...'),
+                        (_sessionLoaded
+                            ? _getTranslatedText('selamat_datang')
+                            : 'Memuat...'),
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 17,
@@ -737,18 +824,45 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 ],
               ),
             ),
-            _buildDrawerListTile(Icons.home, _getTranslatedText('beranda'), () => Navigator.pop(context)),
+            _buildDrawerListTile(
+              Icons.home,
+              _getTranslatedText('beranda'),
+              () => Navigator.pop(context),
+            ),
             // ==========================================================
             // PERBAIKAN: Aksi tombol profile di Drawer
             // ==========================================================
-            _buildDrawerListTile(Icons.account_circle, _getTranslatedText('profile_saya'), _navigateToProfile),
-            _buildDrawerListTile(Icons.settings, _getTranslatedText('pengaturan'), _navigateToSettings), 
-            _buildDrawerListTile(Icons.info_outline, _getTranslatedText('tentang_aplikasi'), () {
-              Navigator.pop(context);
-              _showAboutDialog();
-            }),
-            Divider(height: 20, thickness: 1, indent: 16, endIndent: 16, color: _getBrandSubTextColor()),
-            _buildDrawerListTile(Icons.logout, _getTranslatedText('log_out'), () => _logout(), isLogout: true),
+            _buildDrawerListTile(
+              Icons.account_circle,
+              _getTranslatedText('profile_saya'),
+              _navigateToProfile,
+            ),
+            _buildDrawerListTile(
+              Icons.settings,
+              _getTranslatedText('pengaturan'),
+              _navigateToSettings,
+            ),
+            _buildDrawerListTile(
+              Icons.info_outline,
+              _getTranslatedText('tentang_aplikasi'),
+              () {
+                Navigator.pop(context);
+                _showAboutDialog();
+              },
+            ),
+            Divider(
+              height: 20,
+              thickness: 1,
+              indent: 16,
+              endIndent: 16,
+              color: _getBrandSubTextColor(),
+            ),
+            _buildDrawerListTile(
+              Icons.logout,
+              _getTranslatedText('log_out'),
+              () => _logout(),
+              isLogout: true,
+            ),
           ],
         ),
       ),
@@ -766,8 +880,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     end: _bottomAlignmentAnimation.value,
                     colors: [
                       // Menggunakan dynamic color untuk gradasi animasi
-                      _isDarkModeActive ? dynamicPrimary : _color1Animation.value!,
-                      _isDarkModeActive ? dynamicAccent : _color2Animation.value!,
+                      _isDarkModeActive
+                          ? dynamicPrimary
+                          : _color1Animation.value!,
+                      _isDarkModeActive
+                          ? dynamicAccent
+                          : _color2Animation.value!,
                     ],
                   ),
                 ),
@@ -777,64 +895,84 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
           // Content Scrollable
           RefreshIndicator(
-            color: dynamicPrimary, 
+            color: dynamicPrimary,
             onRefresh: fetchBrands,
             child: CustomScrollView(
               slivers: [
                 SliverList(
-                  delegate: SliverChildListDelegate(
-                    [
-                      // Header Section
-                      Container(
-                        height: MediaQuery.of(context).size.height * 0.45,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              _getTranslatedText('bandingkan_semua'),
-                              style: GoogleFonts.montserrat(
-                                fontSize: 46,
-                                fontWeight: FontWeight.w900,
-                                color: _getTextColor(),
-                                letterSpacing: 1.0,
-                                shadows: [
-                                  Shadow(
-                                    offset: const Offset(0, 4),
-                                    blurRadius: 8,
-                                    color: Colors.black.withOpacity(0.35),
-                                  ),
-                                ],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              _getTranslatedText('slogan_hp'),
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: _getSubTextColor(),
-                                fontWeight: FontWeight.w400,
-                                letterSpacing: 0.2,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 30),
-                            // Larger, more prominent search bar with pill CTA
-                            _buildSearchAndCompareBar(),
-                            const SizedBox(height: 30),
-                            Icon(Icons.keyboard_arrow_down, color: _getTextColor(), size: 30),
-                            const SizedBox(height: 5),
-                          ],
-                        ),
+                  delegate: SliverChildListDelegate([
+                    // Header Section
+                    Container(
+                      // 1. HAPUS height tetap. Biarkan dia fleksibel.
+                      // height: MediaQuery.of(context).size.height * 0.45, 
+                      
+                      width: double.infinity, // Pastikan lebar penuh
+                      
+                      // 2. UBAH PADDING
+                      padding: const EdgeInsets.only(
+                        left: 24, 
+                        right: 24, 
+                        top: 50,      // Beri jarak dari status bar
+                        bottom: 80,   // PENTING: Jarak bawah besar (80px) untuk kompensasi Card Putih yang naik
                       ),
                       
-                      // Brand/Search Results Section (floating white card)
-                      Transform.translate(
-                        offset: const Offset(0, -45),
-                        child: Container(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            _getTranslatedText('bandingkan_semua'),
+                            style: GoogleFonts.montserrat(
+                              fontSize: 40, // Saya kecilkan sedikit dari 46 agar aman di HP kecil
+                              fontWeight: FontWeight.w900,
+                              color: _getTextColor(),
+                              letterSpacing: 1.0,
+                              shadows: [
+                                Shadow(
+                                  offset: const Offset(0, 4),
+                                  blurRadius: 8,
+                                  color: Colors.black.withOpacity(0.35),
+                                ),
+                              ],
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            _getTranslatedText('slogan_hp'),
+                            style: TextStyle(
+                              fontSize: 16, // Sedikit diperkecil agar rapi
+                              color: _getSubTextColor(),
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 0.2,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          
+                          const SizedBox(height: 30),
+                          
+                          // SEARCH BAR ANDA
+                          _buildSearchAndCompareBar(),
+                          
+                          const SizedBox(height: 20),
+                          
+                          Icon(
+                            Icons.keyboard_arrow_down,
+                            color: _getTextColor(),
+                            size: 30,
+                          ),
+                          // Tidak perlu SizedBox di bawah lagi karena sudah ada padding bottom 80
+                        ],
+                      ),
+                    ),
+
+                    // Brand/Search Results Section (floating white card)
+                    Transform.translate(
+                      offset: const Offset(0, -45),
+                      child: Container(
                         decoration: BoxDecoration(
-                          color: _isDarkModeActive ? _getCardColor() : Colors.white,
+                          color: _isDarkModeActive
+                              ? _getCardColor()
+                              : Colors.white,
                           borderRadius: const BorderRadius.only(
                             topLeft: Radius.circular(30),
                             topRight: Radius.circular(30),
@@ -847,12 +985,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             ),
                           ],
                         ),
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 20,
+                        ),
                         child: contentList,
                       ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ]),
                 ),
               ],
             ),
@@ -864,15 +1004,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   // --- WIDGET KOMPONEN ---
 
-  Widget _buildDrawerListTile(IconData icon, String title, VoidCallback onTap, {bool isLogout = false}) {
+  Widget _buildDrawerListTile(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    bool isLogout = false,
+  }) {
     final Color dynamicPrimary = _getPrimaryColor();
     final Color dynamicBrandText = _getBrandTextColor();
-    
+
     return ListTile(
-      leading: Icon(
-        icon,
-        color: isLogout ? Colors.redAccent : dynamicPrimary,
-      ),
+      leading: Icon(icon, color: isLogout ? Colors.redAccent : dynamicPrimary),
       title: Text(
         title,
         style: TextStyle(
@@ -886,7 +1028,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildLoadingShimmer({int count = 6, String title = 'Memuat Data...'}) {
+  Widget _buildLoadingShimmer({
+    int count = 6,
+    String title = 'Memuat Data...',
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -902,17 +1047,20 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           ),
         ),
         Shimmer.fromColors(
-          baseColor: _getShimmerBaseColor(), 
+          baseColor: _getShimmerBaseColor(),
           highlightColor: _getShimmerHighlightColor(),
           child: Column(
-            children: List.generate(count, (index) => Container(
-              height: 90,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: _getCardColor(),
-                borderRadius: BorderRadius.circular(18),
+            children: List.generate(
+              count,
+              (index) => Container(
+                height: 90,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: _getCardColor(),
+                  borderRadius: BorderRadius.circular(18),
+                ),
               ),
-            )),
+            ),
           ),
         ),
       ],
@@ -927,11 +1075,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.cloud_off,
-              size: 72,
-              color: _getErrorIconColor(),
-            ),
+            Icon(Icons.cloud_off, size: 72, color: _getErrorIconColor()),
             const SizedBox(height: 20),
             Text(
               errorMessage,
@@ -943,7 +1087,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               style: ElevatedButton.styleFrom(
                 backgroundColor: dynamicPrimary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 30,
+                  vertical: 15,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
@@ -960,7 +1107,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               icon: const Icon(Icons.refresh),
               label: Text(
                 _getTranslatedText('coba_lagi'),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ],
@@ -991,7 +1141,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               controller: searchController,
               style: TextStyle(color: _getBrandTextColor()),
               decoration: InputDecoration(
-                hintText: _searchHints.isNotEmpty ? _searchHints[_currentHintIndex] : '', 
+                hintText: _searchHints.isNotEmpty
+                    ? _searchHints[_currentHintIndex]
+                    : '',
                 hintStyle: TextStyle(color: _getBrandSubTextColor()),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 8.0, right: 8.0),
@@ -1003,14 +1155,17 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         onPressed: () {
                           searchController.clear();
                           if (_hintTimer == null || !_hintTimer!.isActive) {
-                             _startHintTimer();
+                            _startHintTimer();
                           }
                         },
                       )
                     : null,
                 filled: true,
                 fillColor: Colors.transparent,
-                contentPadding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 16.0,
+                  horizontal: 8.0,
+                ),
                 focusedBorder: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 border: InputBorder.none,
@@ -1021,35 +1176,40 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           SizedBox(
             height: 48,
             child: ElevatedButton(
-            onPressed: () {
-              if (query.trim().isEmpty) {
+              onPressed: () {
+                if (query.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(_getTranslatedText('input_kosong_snack')),
                       backgroundColor: Colors.orange,
                     ),
                   );
-              } else {
+                } else {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (_) => BrandScreen(brand: query)), 
+                    MaterialPageRoute(
+                      builder: (_) => BrandScreen(brand: query),
+                    ),
                   );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: dynamicPrimary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 26),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: dynamicPrimary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 26),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                elevation: 0,
               ),
-              elevation: 0,
+              child: Text(
+                _getTranslatedText('cari_button'),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            child: Text(
-              _getTranslatedText('cari_button'),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ),
           ),
         ],
       ),
@@ -1075,12 +1235,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         color: Colors.transparent,
         child: InkWell(
           onTap: () {
-             ScaffoldMessenger.of(context).showSnackBar(
-               SnackBar(
-                 content: Text('Mengarahkan ke detail ${phone.name} dari brand ${phone.brand} (Implementasi detail screen diperlukan)'),
-                 backgroundColor: _getAccentColor(),
-               ),
-             );
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  'Mengarahkan ke detail ${phone.name} dari brand ${phone.brand} (Implementasi detail screen diperlukan)',
+                ),
+                backgroundColor: _getAccentColor(),
+              ),
+            );
           },
           borderRadius: BorderRadius.circular(20),
           child: Padding(
@@ -1103,7 +1265,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
                   child: Center(
                     child: Text(
-                      phone.brand.isNotEmpty ? phone.brand[0].toUpperCase() : '?',
+                      phone.brand.isNotEmpty
+                          ? phone.brand[0].toUpperCase()
+                          : '?',
                       style: TextStyle(
                         color: dynamicPrimary,
                         fontSize: 24,
@@ -1169,9 +1333,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         child: InkWell(
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => BrandScreen(brand: brand),
-            ),
+            MaterialPageRoute(builder: (_) => BrandScreen(brand: brand)),
           ),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
@@ -1202,7 +1364,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        brand, 
+                        brand,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 17,
@@ -1233,14 +1395,19 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
-  Widget _buildEmptySearchView({required bool isProductSearch, String? customTitle}) {
-    String title = customTitle ?? (isProductSearch 
-        ? '${_getTranslatedText('produk_ditemukan')}"${query}" ${_getTranslatedText('ditemukan')}.' 
-        : _getTranslatedText('tidak_ada_brand')); 
-    String subtitle = isProductSearch 
-        ? 'Coba cek ejaan, kata kunci lain, atau pastikan API search_products.php aktif.' 
+  Widget _buildEmptySearchView({
+    required bool isProductSearch,
+    String? customTitle,
+  }) {
+    String title =
+        customTitle ??
+        (isProductSearch
+            ? '${_getTranslatedText('produk_ditemukan')}"${query}" ${_getTranslatedText('ditemukan')}.'
+            : _getTranslatedText('tidak_ada_brand'));
+    String subtitle = isProductSearch
+        ? 'Coba cek ejaan, kata kunci lain, atau pastikan API search_products.php aktif.'
         : 'Coba periksa koneksi atau sinkronkan data brand.';
-        
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 60),
       child: Column(
@@ -1280,11 +1447,11 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  static const Color primaryPurple = Color(0xFF4B0082); 
-  bool _isDarkMode = false; 
-  bool _isPushNotificationEnabled = true; 
+  static const Color primaryPurple = Color(0xFF4B0082);
+  bool _isDarkMode = false;
+  bool _isPushNotificationEnabled = true;
 
-  late String _currentLanguageCode; 
+  late String _currentLanguageCode;
   final Map<String, String> _languages = {
     'id': 'Bahasa Indonesia',
     'en': 'English',
@@ -1295,7 +1462,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _currentLanguageCode = AppLanguage.currentLanguageCode;
-    _loadInitialSettings(); 
+    _loadInitialSettings();
   }
 
   // --- FUNGSI TEMA & SETTINGS PERSISTENCE ---
@@ -1314,7 +1481,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setString(AppLanguage.keyLanguageCode, newCode);
     AppLanguage.currentLanguageCode = newCode;
   }
-  
+
   // FUNGSI UNTUK SIMPAN TEMA
   Future<void> _saveThemeSetting(bool value) async {
     final prefs = await SharedPreferences.getInstance();
@@ -1361,14 +1528,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${_getTranslatedText('ganti_bahasa_snack')}${_languages[selectedCode]}'),
+          content: Text(
+            '${_getTranslatedText('ganti_bahasa_snack')}${_languages[selectedCode]}',
+          ),
           duration: const Duration(seconds: 2),
           backgroundColor: primaryPurple,
         ),
       );
 
       // Kembali ke HomeScreen dan kirimkan sinyal reload
-      Navigator.pop(context, true); 
+      Navigator.pop(context, true);
     }
   }
 
@@ -1386,21 +1555,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
           // BAGIAN 1: UMUM
           // ==========================================================
           _buildHeader(_getTranslatedText('umum')),
-          
-          // Opsi 1: Mode Tampilan 
+
+          // Opsi 1: Mode Tampilan
           ListTile(
             leading: const Icon(Icons.palette, color: primaryPurple),
             title: Text(_getTranslatedText('mode_tampilan')),
             subtitle: Text(
-              _getTranslatedText('saat_ini') + ' ' + 
-              (_isDarkMode ? _getTranslatedText('mode_gelap') : _getTranslatedText('mode_terang'))
+              _getTranslatedText('saat_ini') +
+                  ' ' +
+                  (_isDarkMode
+                      ? _getTranslatedText('mode_gelap')
+                      : _getTranslatedText('mode_terang')),
             ),
             trailing: Switch(
-              value: _isDarkMode, 
-              onChanged: (bool value) async { 
-                
-                await _saveThemeSetting(value); 
-                
+              value: _isDarkMode,
+              onChanged: (bool value) async {
+                await _saveThemeSetting(value);
+
                 setState(() {
                   _isDarkMode = value;
                 });
@@ -1408,28 +1579,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      _getTranslatedText('mengubah_mode') + ' ' +
-                      (value ? _getTranslatedText('mode_gelap_label') : _getTranslatedText('mode_terang_label'))
+                      _getTranslatedText('mengubah_mode') +
+                          ' ' +
+                          (value
+                              ? _getTranslatedText('mode_gelap_label')
+                              : _getTranslatedText('mode_terang_label')),
                     ),
                     duration: const Duration(milliseconds: 1500),
                   ),
                 );
-                
+
                 // Kembali ke HomeScreen dan kirimkan sinyal reload (true)
-                Navigator.pop(context, true); 
+                Navigator.pop(context, true);
               },
               activeColor: primaryPurple,
             ),
           ),
           const Divider(height: 1),
 
-          // Opsi 2: Bahasa Aplikasi 
+          // Opsi 2: Bahasa Aplikasi
           ListTile(
             leading: const Icon(Icons.language, color: primaryPurple),
             title: Text(_getTranslatedText('bahasa_aplikasi')),
-            subtitle: Text('${_getTranslatedText('saat_ini')} ${_languages[_currentLanguageCode]}'), 
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
-            onTap: () => _showLanguageChooser(context), 
+            subtitle: Text(
+              '${_getTranslatedText('saat_ini')} ${_languages[_currentLanguageCode]}',
+            ),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey,
+            ),
+            onTap: () => _showLanguageChooser(context),
           ),
           const Divider(height: 1),
 
@@ -1440,20 +1620,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
           // Opsi 3: Notifikasi Push
           ListTile(
-            leading: const Icon(Icons.notifications_active, color: primaryPurple),
+            leading: const Icon(
+              Icons.notifications_active,
+              color: primaryPurple,
+            ),
             title: Text(_getTranslatedText('notif_push')),
             subtitle: Text(_getTranslatedText('notif_subtitle')),
             trailing: Switch(
-              value: _isPushNotificationEnabled, 
+              value: _isPushNotificationEnabled,
               onChanged: (bool value) {
                 setState(() {
                   _isPushNotificationEnabled = value;
                 });
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
-                    content: Text(
-                      "Status notifikasi diubah"
-                    ),
+                    content: Text("Status notifikasi diubah"),
                     duration: Duration(seconds: 1),
                   ),
                 );
@@ -1463,12 +1644,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(height: 1),
 
-
           // ==========================================================
           // BAGIAN 3: PRIVASI & KEAMANAN
           // ==========================================================
           _buildHeader(_getTranslatedText('privasi_keamanan')),
-          
+
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 20.0),
             child: Text(
@@ -1477,7 +1657,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const Divider(height: 1),
-
 
           // ==========================================================
           // BAGIAN 4: DATA & SINKRONISASI
@@ -1489,7 +1668,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.refresh, color: primaryPurple),
             title: Text(_getTranslatedText('perbarui_data')),
             subtitle: Text(_getTranslatedText('sinkron_subtitle')),
-            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+            trailing: const Icon(
+              Icons.arrow_forward_ios,
+              size: 16,
+              color: Colors.grey,
+            ),
             onTap: () {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -1501,7 +1684,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const Divider(height: 1),
-
         ],
       ),
     );

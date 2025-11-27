@@ -10,7 +10,7 @@ class ApiService {
   // ======================================================
 
   // 💡 IP PC Anda (Host)
-  static const String _localHostIp = "http://192.168.1.4";
+  static const String _localHostIp = "http://192.168.1.6";
 
   static const String _apiFolder = "/api_hp/";
 
