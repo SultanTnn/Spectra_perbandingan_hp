@@ -10,7 +10,7 @@ class ApiService {
   // ======================================================
 
   // 💡 IP PC Anda (Host)
-  static const String _localHostIp = "http://10.71.91.197";
+  static const String _localHostIp = "http://192.168.1.4";
 
   static const String _apiFolder = "/api_hp/";
 
@@ -53,6 +53,20 @@ class ApiService {
   static String get baseImageUrl {
     // Contoh: http://192.168.1.32/api_hp/images/
     return "${baseUrl}images/";
+  }
+
+  /// Ensures we return a fully-qualified image URL.
+  /// If the server returns a path like 'uploads/profile.jpg' or '/images/profile.jpg'
+  /// this function will normalize it to: 'http://<host>/api_hp/images/...'
+  static String normalizeImageUrl(String path) {
+    if (path.startsWith('http')) return path;
+    // Remove leading slashes
+    var p = path.replaceFirst(RegExp(r'^/+'), '');
+    // If the path already contains 'images/' or 'api_hp', attach to baseUrl
+    if (p.startsWith('images/') || p.contains('/images/')) {
+      return '${baseUrl}$p';
+    }
+    return '${baseImageUrl}$p';
   }
 
   // Properti untuk mendapatkan IP murni (digunakan di Smartphone.fromJson)

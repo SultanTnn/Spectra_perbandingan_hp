@@ -13,17 +13,20 @@ dependencies:
 
   cupertino_icons: ^1.0.6
   
-  # Paket tambahan
+  # Paket untuk fitur yang sudah ada
   http: ^1.2.1
   image_picker: ^1.0.7
   google_fonts: ^6.2.1
   shimmer: ^3.0.0
-  mesh_gradient: 1.3.8  
+  mesh_gradient: ^1.3.8 
   url_launcher: ^6.2.5 
   
   # Tambahan untuk fitur 3D
   flutter_3d_controller: ^1.3.0
 
+  # WAJIB: Paket untuk menyimpan data (seperti pilihan bahasa)
+  shared_preferences: ^2.2.2 # Versi terbaru yang stabil
+  
 dev_dependencies:
   flutter_test:
     sdk: flutter

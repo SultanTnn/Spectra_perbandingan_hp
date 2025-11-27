@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../utils/session.dart';
+import '../service/api_service.dart';
 
 // Import untuk deteksi platform (Web atau Mobile)
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:typed_data';
 
 // Import package untuk file
 // import 'dart:io'; // Tidak dipakai di versi Web-safe ini
@@ -97,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      var uri = Uri.parse('http://localhost/api_hp/update_profile.php');
+      var uri = Uri.parse('${ApiService.baseUrl}update_profile.php');
       var request = http.MultipartRequest('POST', uri);
 
       request.fields['id'] = UserSession.id!;
@@ -146,9 +148,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (data['status'] == 'success') {
         UserSession.namaLengkap = _namaLengkapController.text;
         UserSession.username = _usernameController.text;
+        String? returned;
         if (data['data'] != null && data['data']['profile_image_url'] != null) {
-          UserSession.profileImageUrl = data['data']['profile_image_url'];
+          returned = data['data']['profile_image_url'] as String;
+          // Normalize: if returned is a relative path, fix leading slash and prefix
+          returned = ApiService.normalizeImageUrl(returned);
+          UserSession.profileImageUrl = returned;
         }
+        // Always save updates to session (even if image wasn't returned)
+        await UserSession.saveData();
+        // Debug log
+        print('[ProfileScreen] Updated UserSession.profileImageUrl=${UserSession.profileImageUrl}');
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -156,7 +166,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context, true);
+        // Return returned image url (if any) so caller can update UI immediately
+        Navigator.pop(context, returned ?? true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal update: ${data['message']}')),
@@ -174,15 +185,61 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  ImageProvider _getImageProvider() {
+  // Returns ImageProvider or null — null indicates no image to set
+  ImageProvider? _getImageProvider() {
     if (_pickedImage != null) {
       // 'path' dari XFile di web adalah 'blob:...' URL
-      return NetworkImage(_pickedImage!.path);
+      if (kIsWeb) {
+        return NetworkImage(_pickedImage!.path);
+      }
+      // For non-web, we'll read as bytes in a FutureBuilder — avoid using dart:io import
+      return null;
     }
-    if (UserSession.profileImageUrl != null) {
+    if (UserSession.profileImageUrl != null && UserSession.profileImageUrl!.isNotEmpty) {
       return NetworkImage(UserSession.profileImageUrl!);
     }
-    return const AssetImage(''); // Aset kosong
+    return null; // No image available
+  }
+
+  Widget _buildAvatar() {
+    // If picked image is available and we're on the web, just use network image
+    if (_pickedImage != null && kIsWeb) {
+      return CircleAvatar(
+        radius: 60,
+        backgroundColor: Colors.grey.shade200,
+        backgroundImage: NetworkImage(_pickedImage!.path),
+      );
+    }
+
+    // If picked image on mobile (not web) we need to load bytes asynchronously
+    if (_pickedImage != null && !kIsWeb) {
+      return FutureBuilder<Uint8List?>(
+        future: _pickedImage!.readAsBytes(),
+        builder: (context, snapshot) {
+          final ImageProvider? provider = (snapshot.connectionState == ConnectionState.done && snapshot.hasData && snapshot.data != null)
+              ? MemoryImage(snapshot.data!)
+              : (_getImageProvider());
+
+          return CircleAvatar(
+            radius: 60,
+            backgroundColor: Colors.grey.shade200,
+            backgroundImage: provider,
+            child: (provider == null)
+                ? Icon(Icons.person, size: 60, color: Colors.grey.shade400)
+                : null,
+          );
+        },
+      );
+    }
+
+    // No picked image or mobile with no picked image — use session URL if exists
+    final provider = _getImageProvider();
+    return CircleAvatar(
+      radius: 60,
+      backgroundColor: Colors.grey.shade200,
+      backgroundImage: provider,
+      child: (provider == null) ? Icon(Icons.person, size: 60, color: Colors.grey.shade400) : null,
+    );
   }
 
   @override
@@ -199,19 +256,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Center(
                 child: Stack(
                   children: [
-                    CircleAvatar(
-                      radius: 60,
-                      backgroundColor: Colors.grey.shade200,
-                      backgroundImage: (_pickedImage != null ||
-                              UserSession.profileImageUrl != null)
-                          ? _getImageProvider()
-                          : null,
-                      child: (_pickedImage == null &&
-                              UserSession.profileImageUrl == null)
-                          ? Icon(Icons.person,
-                              size: 60, color: Colors.grey.shade400)
-                          : null,
-                    ),
+                    // Use helper to build the avatar safely for web & mobile
+                    _buildAvatar(),
                     Positioned(
                       bottom: 0,
                       right: 0,

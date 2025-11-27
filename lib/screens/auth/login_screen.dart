@@ -69,7 +69,13 @@ class _LoginScreenState extends State<LoginScreen> {
         UserSession.username = userUsername;
         UserSession.namaLengkap = userNamaLengkap;
         UserSession.role = userRole;
-        UserSession.profileImageUrl = userProfileImage;
+        if (userProfileImage != null && userProfileImage.isNotEmpty) {
+          var actual = ApiService.normalizeImageUrl(userProfileImage);
+          UserSession.profileImageUrl = actual;
+        } else {
+          UserSession.profileImageUrl = userProfileImage;
+        }
+        await UserSession.saveData();
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
