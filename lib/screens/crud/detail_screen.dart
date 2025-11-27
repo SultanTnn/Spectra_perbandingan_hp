@@ -52,7 +52,7 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> fetchDetail() async {
     // PASTIKAN IP ADDRESS INI SAMA DENGAN IP XAMPP ANDA
     final url = Uri.parse(
-      'http://192.168.1.32/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
+      'http://10.61.9.141/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
     );
 
     try {
@@ -209,7 +209,8 @@ class _DetailScreenState extends State<DetailScreen> {
     // --- DEBUGGING CONSOLE FINAL ---
     print('Purchase URL (Raw): $purchaseUrlRaw');
     print('Purchase URL (Cleaned): $cleanedPurchaseUrl');
-    print('Apakah Tombol Keranjang Muncul? ${data != null && cleanedPurchaseUrl.isNotEmpty}',
+    print(
+      'Apakah Tombol Keranjang Muncul? ${data != null && cleanedPurchaseUrl.isNotEmpty}',
     );
     // -------------------------
 
@@ -262,84 +263,84 @@ class _DetailScreenState extends State<DetailScreen> {
           ),
         ),
         child: loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Colors.white),
-                  )
-                : errorMessage.isNotEmpty
-                ? Center(
-                    child: Text(
-                      errorMessage,
-                      style: const TextStyle(color: Colors.white, fontSize: 16),
-                    ),
-                  )
-                : SingleChildScrollView(
-                    padding: const EdgeInsets.only(
-                      top: 100,
-                      left: 24,
-                      right: 24,
-                      bottom: 24,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Card Utama untuk Detail
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 15,
-                                offset: Offset(0, 10),
-                              ),
-                            ],
+            ? const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              )
+            : errorMessage.isNotEmpty
+            ? Center(
+                child: Text(
+                  errorMessage,
+                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                ),
+              )
+            : SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  top: 100,
+                  left: 24,
+                  right: 24,
+                  bottom: 24,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Card Utama untuk Detail
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Colors.black26,
+                            blurRadius: 15,
+                            offset: Offset(0, 10),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                data?['nama_model'] ?? 'Nama tidak ada',
-                                style: TextStyle(
-                                  fontSize: 28,
-                                  fontWeight: FontWeight.bold,
-                                  color: primaryColor,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Brand: ${widget.brand}',
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const Divider(height: 30, thickness: 2),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            data?['nama_model'] ?? 'Nama tidak ada',
+                            style: TextStyle(
+                              fontSize: 28,
+                              fontWeight: FontWeight.bold,
+                              color: primaryColor,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Brand: ${widget.brand}',
+                            style: const TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const Divider(height: 30, thickness: 2),
 
-                              _buildDetailRow('Harga', data?['price'] ?? '-'),
-                              _buildDetailRow('Body', data?['body'] ?? '-'),
-                              _buildDetailRow('Display', data?['display'] ?? '-'),
-                              _buildDetailRow('Platform', data?['platform'] ?? '-'),
-                              _buildDetailRow('Memory', data?['memory'] ?? '-'),
-                              _buildDetailRow(
-                                'Main Camera',
-                                data?['main_camera'] ?? '-',
-                              ),
-                              _buildDetailRow(
-                                'Selfie Camera',
-                                data?['selfie_camera'] ?? '-',
-                              ),
-                              _buildDetailRow('Comms', data?['comms'] ?? '-'),
-                              _buildDetailRow('Features', data?['features'] ?? '-'),
-                              _buildDetailRow('Battery', data?['battery'] ?? '-'),
-                            ],
+                          _buildDetailRow('Harga', data?['price'] ?? '-'),
+                          _buildDetailRow('Body', data?['body'] ?? '-'),
+                          _buildDetailRow('Display', data?['display'] ?? '-'),
+                          _buildDetailRow('Platform', data?['platform'] ?? '-'),
+                          _buildDetailRow('Memory', data?['memory'] ?? '-'),
+                          _buildDetailRow(
+                            'Main Camera',
+                            data?['main_camera'] ?? '-',
                           ),
-                        ),
-                      ],
+                          _buildDetailRow(
+                            'Selfie Camera',
+                            data?['selfie_camera'] ?? '-',
+                          ),
+                          _buildDetailRow('Comms', data?['comms'] ?? '-'),
+                          _buildDetailRow('Features', data?['features'] ?? '-'),
+                          _buildDetailRow('Battery', data?['battery'] ?? '-'),
+                        ],
+                      ),
                     ),
-                  ),
+                  ],
+                ),
+              ),
       ),
     );
   }

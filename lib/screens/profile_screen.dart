@@ -1,4 +1,4 @@
-// profile_screen.dart (Versi BARU - Mendukung Web & Mobile)
+// profile_screen.dart (Versi TERBARU - Perbaikan Tampilan Avatar)
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -11,7 +11,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:typed_data';
 
 // Import package untuk file
-// import 'dart:io'; // Tidak dipakai di versi Web-safe ini
 import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -61,7 +60,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
               if (image != null) {
                 setState(() {
-                  _pickedImage = image; 
+                  _pickedImage = image;
                 });
               }
               Navigator.of(ctx).pop();
@@ -77,7 +76,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               );
               if (image != null) {
                 setState(() {
-                  _pickedImage = image; 
+                  _pickedImage = image;
                 });
               }
               Navigator.of(ctx).pop();
@@ -107,17 +106,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       request.fields['username'] = _usernameController.text;
 
       if (_pickedImage != null) {
-        
         if (kIsWeb) {
           // LOGIKA UNTUK WEB (Browser)
           var bytes = await _pickedImage!.readAsBytes();
           var multipartFile = http.MultipartFile.fromBytes(
-            'profile_image', 
+            'profile_image',
             bytes,
             filename: _pickedImage!.name,
           );
           request.files.add(multipartFile);
-          
         } else {
           // LOGIKA UNTUK MOBILE (Android/iOS)
           request.files.add(
@@ -133,14 +130,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       var response = await http.Response.fromStream(streamedResponse);
 
       if (!mounted) return;
-      
+
       // Cek jika balasan BUKAN 200 (OK)
       if (response.statusCode != 200) {
-         setState(() { _isLoading = false; });
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Error dari server: ${response.statusCode}')),
-         );
-         return;
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error dari server: ${response.statusCode}')),
+        );
+        return;
       }
 
       final data = json.decode(response.body);
@@ -154,11 +153,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           // Normalize: if returned is a relative path, fix leading slash and prefix
           returned = ApiService.normalizeImageUrl(returned);
           UserSession.profileImageUrl = returned;
+          
+          // Debugging log untuk memastikan URL yang dikembalikan valid
+          print('[ProfileScreen] URL Gambar Profil Baru: $returned'); 
         }
         // Always save updates to session (even if image wasn't returned)
         await UserSession.saveData();
-        // Debug log
-        print('[ProfileScreen] Updated UserSession.profileImageUrl=${UserSession.profileImageUrl}');
+        print(
+            '[ProfileScreen] Updated UserSession.profileImageUrl=${UserSession.profileImageUrl}');
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -166,7 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        // Return returned image url (if any) so caller can update UI immediately
+        // Return returned image url (if any) so caller (HomeScreen) can update UI immediately
         Navigator.pop(context, returned ?? true);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -174,7 +176,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       }
     } catch (e) {
-      // Ini akan menangkap error JSON <br>
+      // Ini akan menangkap error JSON 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: ${e.toString()}')),
       );
@@ -185,62 +187,75 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Returns ImageProvider or null — null indicates no image to set
-  ImageProvider? _getImageProvider() {
-    if (_pickedImage != null) {
-      // 'path' dari XFile di web adalah 'blob:...' URL
-      if (kIsWeb) {
-        return NetworkImage(_pickedImage!.path);
-      }
-      // For non-web, we'll read as bytes in a FutureBuilder — avoid using dart:io import
-      return null;
-    }
-    if (UserSession.profileImageUrl != null && UserSession.profileImageUrl!.isNotEmpty) {
+  // Helper untuk mendapatkan ImageProvider dari URL sesi (Gambar lama/yang sudah diupload)
+  ImageProvider? _getSessionImageProvider() {
+    if (UserSession.profileImageUrl != null &&
+        UserSession.profileImageUrl!.isNotEmpty) {
       return NetworkImage(UserSession.profileImageUrl!);
     }
-    return null; // No image available
+    return null;
   }
 
+  // --- FUNGSI _buildAvatar() YANG DIPERBAIKI (MENGATASI BLANK PUTIH) ---
   Widget _buildAvatar() {
-    // If picked image is available and we're on the web, just use network image
-    if (_pickedImage != null && kIsWeb) {
-      return CircleAvatar(
-        radius: 60,
-        backgroundColor: Colors.grey.shade200,
-        backgroundImage: NetworkImage(_pickedImage!.path),
-      );
-    }
-
-    // If picked image on mobile (not web) we need to load bytes asynchronously
+    // 1. KASUS MOBILE (Non-Web) dengan gambar baru yang di-pick: Membaca bytes secara asynchronous
     if (_pickedImage != null && !kIsWeb) {
       return FutureBuilder<Uint8List?>(
+        // ValueKey memaksa FutureBuilder me-render ulang setiap kali _pickedImage berubah
+        // Ini memastikan gambar baru muncul instan
+        key: ValueKey(_pickedImage!.path),
         future: _pickedImage!.readAsBytes(),
         builder: (context, snapshot) {
-          final ImageProvider? provider = (snapshot.connectionState == ConnectionState.done && snapshot.hasData && snapshot.data != null)
-              ? MemoryImage(snapshot.data!)
-              : (_getImageProvider());
+          ImageProvider? mobileProvider;
+          Widget? childWidget;
+
+          if (snapshot.connectionState == ConnectionState.done &&
+              snapshot.hasData) {
+            // Data bytes sukses dimuat: Tampilkan gambar baru
+            mobileProvider = MemoryImage(snapshot.data!);
+          } else if (snapshot.hasError) {
+            // Error saat membaca file, gunakan gambar sesi lama
+            mobileProvider = _getSessionImageProvider();
+            childWidget = const Icon(Icons.error, size: 60, color: Colors.red);
+          } else {
+            // Sementara menunggu (loading), tampilkan gambar sesi lama
+            mobileProvider = _getSessionImageProvider();
+          }
 
           return CircleAvatar(
             radius: 60,
             backgroundColor: Colors.grey.shade200,
-            backgroundImage: provider,
-            child: (provider == null)
+            backgroundImage: mobileProvider,
+            child: (mobileProvider == null && childWidget == null)
                 ? Icon(Icons.person, size: 60, color: Colors.grey.shade400)
-                : null,
+                : childWidget,
           );
         },
       );
     }
 
-    // No picked image or mobile with no picked image — use session URL if exists
-    final provider = _getImageProvider();
+    // 2. KASUS WEB / TIDAK ADA GAMBAR BARU DI-PICK / Mobile tanpa gambar baru
+    ImageProvider? finalProvider;
+
+    if (_pickedImage != null && kIsWeb) {
+      // KASUS WEB: Langsung pakai NetworkImage (blob URL dari XFile)
+      finalProvider = NetworkImage(_pickedImage!.path);
+    } else {
+      // KASUS LAINNYA: Ambil dari sesi (URL lama/terbaru)
+      finalProvider = _getSessionImageProvider();
+    }
+
     return CircleAvatar(
       radius: 60,
       backgroundColor: Colors.grey.shade200,
-      backgroundImage: provider,
-      child: (provider == null) ? Icon(Icons.person, size: 60, color: Colors.grey.shade400) : null,
+      backgroundImage: finalProvider,
+      child: (finalProvider == null)
+          ? Icon(Icons.person, size: 60, color: Colors.grey.shade400)
+          : null,
     );
   }
+  // ----------------------------------------------------------------------
+
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Center(
                 child: Stack(
                   children: [
-                    // Use helper to build the avatar safely for web & mobile
+                    // Gunakan fungsi _buildAvatar() yang sudah diperbaiki
                     _buildAvatar(),
                     Positioned(
                       bottom: 0,
@@ -279,7 +294,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
+              // ... (lanjutkan TextFormField Nama Lengkap)
               TextFormField(
                 controller: _namaLengkapController,
                 decoration: const InputDecoration(
@@ -295,6 +310,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 16),
+              // ... (lanjutkan TextFormField Username)
               TextFormField(
                 controller: _usernameController,
                 decoration: const InputDecoration(
@@ -310,6 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 32),
+              // ... (lanjutkan ElevatedButton Simpan Perubahan)
               ElevatedButton(
                 onPressed: _isLoading ? null : _updateProfile,
                 style: ElevatedButton.styleFrom(

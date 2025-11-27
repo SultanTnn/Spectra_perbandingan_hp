@@ -12,7 +12,11 @@ import '../../utils/session.dart';
 class BrandScreen extends StatefulWidget {
   final String brand;
 
-  const BrandScreen({super.key, required this.brand});
+  const BrandScreen({
+    super.key,
+    required this.brand,
+    required List phonesToCompare,
+  });
 
   @override
   State<BrandScreen> createState() => _BrandScreenState();
@@ -28,7 +32,7 @@ class _BrandScreenState extends State<BrandScreen> {
     if (kIsWeb) {
       return "http://localhost/api_hp/";
     } else {
-      return "http://192.168.1.6/api_hp/"; // IP LAN laptop kamu
+      return "http://10.61.9.141/api_hp/"; // IP LAN laptop kamu
     }
   }
 

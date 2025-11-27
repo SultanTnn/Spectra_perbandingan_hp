@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/service/api_service.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:ui'; 
+import 'dart:ui';
 import 'package:google_fonts/google_fonts.dart';
 import 'register_screen.dart';
-import '../home/screen_home.dart';
+import '../home/screen_home.dart' hide UserSession;
 import '../../utils/session.dart';
 
 class LoginScreen extends StatefulWidget {

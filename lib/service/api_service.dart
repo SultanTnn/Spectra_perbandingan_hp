@@ -10,7 +10,7 @@ class ApiService {
   // ======================================================
 
   // 💡 IP PC Anda (Host)
-  static const String _localHostIp = "http://192.168.1.6";
+  static const String _localHostIp = "http://10.61.9.141";
 
   static const String _apiFolder = "/api_hp/";
 
@@ -51,7 +51,7 @@ class ApiService {
 
   // Base URL Dinamis untuk Gambar (Base URL API + folder 'images/')
   static String get baseImageUrl {
-    // Contoh: http://192.168.1.32/api_hp/images/
+    // Contoh: http://10.61.9.141/api_hp/images/
     return "${baseUrl}images/";
   }
 
