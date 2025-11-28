@@ -9,7 +9,6 @@ import '../comparison/brand_screen.dart'; // Import BrandScreen
 import 'home_settings.dart'; // Import AppLanguage
 // Di file home_widgets.dart
 
-
 // ======================================================================
 // 1. DATA MODEL
 // ======================================================================
@@ -75,10 +74,7 @@ class HomeWidgets {
     required this.startHintTimer,
   });
 
-  Widget buildLoadingShimmer({
-    int count = 6,
-    String title = 'Memuat Data...',
-  }) {
+  Widget buildLoadingShimmer({int count = 6, String title = 'Memuat Data...'}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -114,7 +110,10 @@ class HomeWidgets {
     );
   }
 
-  Widget buildErrorView({required String errorMessage, required Function() onTryAgain}) {
+  Widget buildErrorView({
+    required String errorMessage,
+    required Function() onTryAgain,
+  }) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -180,8 +179,9 @@ class HomeWidgets {
               controller: searchController,
               style: TextStyle(color: brandTextColor),
               decoration: InputDecoration(
-                hintText:
-                    searchHints.isNotEmpty ? searchHints[currentHintIndex] : '',
+                hintText: searchHints.isNotEmpty
+                    ? searchHints[currentHintIndex]
+                    : '',
                 hintStyle: TextStyle(color: brandSubTextColor),
                 prefixIcon: Padding(
                   padding: const EdgeInsets.only(left: 8.0, right: 8.0),
@@ -438,7 +438,8 @@ class HomeWidgets {
     required bool isProductSearch,
     String? customTitle,
   }) {
-    String title = customTitle ??
+    String title =
+        customTitle ??
         (isProductSearch
             ? '${getTranslatedText('produk_ditemukan')}"$query" ${getTranslatedText('ditemukan')}.'
             : getTranslatedText('tidak_ada_brand'));

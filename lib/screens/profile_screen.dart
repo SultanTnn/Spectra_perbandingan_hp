@@ -1,17 +1,14 @@
-// profile_screen.dart (Versi TERBARU - Perbaikan Tampilan Avatar)
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../utils/session.dart';
 import '../service/api_service.dart';
-
-// Import untuk deteksi platform (Web atau Mobile)
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:typed_data';
-
-// Import package untuk file
 import 'package:image_picker/image_picker.dart';
+import '../screens/home/profile_avatar_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -29,12 +26,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   XFile? _pickedImage;
   final ImagePicker _picker = ImagePicker();
+  
+  // Kunci unik untuk memaksa rebuild avatar di layar ini
+  int _localAvatarKey = 0; 
 
   @override
   void initState() {
     super.initState();
     _namaLengkapController.text = UserSession.namaLengkap ?? '';
     _usernameController.text = UserSession.username ?? '';
+    // Inisialisasi kunci lokal agar sesuai dengan kunci sesi
+    _localAvatarKey = UserSession.cacheKey; 
   }
 
   @override
@@ -44,6 +46,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
+  // ... (Fungsi _pickImage tetap sama, tidak perlu diubah) ...
   Future<void> _pickImage() async {
     showModalBottomSheet(
       context: context,
@@ -61,6 +64,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (image != null) {
                 setState(() {
                   _pickedImage = image;
+                  _localAvatarKey = DateTime.now().millisecondsSinceEpoch; // Update local key
                 });
               }
               Navigator.of(ctx).pop();
@@ -77,6 +81,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (image != null) {
                 setState(() {
                   _pickedImage = image;
+                  _localAvatarKey = DateTime.now().millisecondsSinceEpoch; // Update local key
                 });
               }
               Navigator.of(ctx).pop();
@@ -87,7 +92,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // --- FUNGSI UPDATE YANG SUDAH DIPERBAIKI (Web + Mobile) ---
+  // --- FUNGSI UPDATE YANG SUDAH DIPERBAIKI (Penanganan Error JSON) ---
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -107,7 +112,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       if (_pickedImage != null) {
         if (kIsWeb) {
-          // LOGIKA UNTUK WEB (Browser)
           var bytes = await _pickedImage!.readAsBytes();
           var multipartFile = http.MultipartFile.fromBytes(
             'profile_image',
@@ -116,7 +120,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           );
           request.files.add(multipartFile);
         } else {
-          // LOGIKA UNTUK MOBILE (Android/iOS)
           request.files.add(
             await http.MultipartFile.fromPath(
               'profile_image',
@@ -133,34 +136,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       // Cek jika balasan BUKAN 200 (OK)
       if (response.statusCode != 200) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error dari server: ${response.statusCode}')),
-        );
-        return;
+        throw Exception('Server mengembalikan error HTTP: ${response.statusCode}');
+      }
+      
+      // --- PENANGANAN JSON YANG LEBIH BAIK ---
+      String responseBody = response.body.trim();
+      
+      // Deteksi jika server mengembalikan HTML/Warning (seperti "<br />...")
+      if (responseBody.startsWith('<') || responseBody.startsWith('<b>') || responseBody.isEmpty) {
+        throw Exception('Respons server tidak valid. Mungkin ada PHP Warning/Error. Respons: $responseBody');
       }
 
-      final data = json.decode(response.body);
+      final data = json.decode(responseBody);
 
       if (data['status'] == 'success') {
         UserSession.namaLengkap = _namaLengkapController.text;
         UserSession.username = _usernameController.text;
-        String? returned;
+        
+        String? returnedImageUrl;
+        
         if (data['data'] != null && data['data']['profile_image_url'] != null) {
-          returned = data['data']['profile_image_url'] as String;
-          // Normalize: if returned is a relative path, fix leading slash and prefix
-          returned = ApiService.normalizeImageUrl(returned);
-          UserSession.profileImageUrl = returned;
-          
-          // Debugging log untuk memastikan URL yang dikembalikan valid
-          print('[ProfileScreen] URL Gambar Profil Baru: $returned'); 
+          returnedImageUrl = data['data']['profile_image_url'] as String;
+          // Asumsi ApiService.normalizeImageUrl sudah benar
+          UserSession.profileImageUrl = returnedImageUrl;
         }
-        // Always save updates to session (even if image wasn't returned)
+
+        // *** TAMBAHAN PENTING: UPDATE CACHE KEY ***
+        // Paksa semua widget avatar lainnya untuk reload
+        UserSession.cacheKey = UserSession.cacheKey + 1; 
+
+        // Simpan semua perubahan sesi (termasuk cacheKey)
         await UserSession.saveData();
-        print(
-            '[ProfileScreen] Updated UserSession.profileImageUrl=${UserSession.profileImageUrl}');
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -168,94 +174,74 @@ class _ProfileScreenState extends State<ProfileScreen> {
             backgroundColor: Colors.green,
           ),
         );
-        // Return returned image url (if any) so caller (HomeScreen) can update UI immediately
-        Navigator.pop(context, returned ?? true);
+        // Kirim hasil (URL baru atau true) kembali ke Home Screen
+        Navigator.pop(context, true); 
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Gagal update: ${data['message']}')),
         );
       }
     } catch (e) {
-      // Ini akan menangkap error JSON 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: ${e.toString()}')),
-      );
+      // Menangkap semua error: HTTP, JSON Decode, atau Exception buatan sendiri
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: ${e.toString()}')));
+      print('Update Profile Error: $e'); // Log error untuk debugging
     } finally {
       setState(() {
         _isLoading = false;
+        // Reset _pickedImage setelah proses selesai
+        _pickedImage = null; 
       });
     }
   }
 
   // Helper untuk mendapatkan ImageProvider dari URL sesi (Gambar lama/yang sudah diupload)
   ImageProvider? _getSessionImageProvider() {
+    // Tambahkan cacheKey ke URL sesi agar gambar lama yang baru di-update tetap ter-refresh di layar ini
     if (UserSession.profileImageUrl != null &&
         UserSession.profileImageUrl!.isNotEmpty) {
-      return NetworkImage(UserSession.profileImageUrl!);
+      // Menggunakan logika separator yang sama seperti di ProfileAvatarWidget
+      final String separator = UserSession.profileImageUrl!.contains('?') ? '&' : '?';
+      final String finalUrl = '${UserSession.profileImageUrl}$separator${UserSession.cacheKey}';
+      return NetworkImage(finalUrl);
     }
     return null;
   }
 
-  // --- FUNGSI _buildAvatar() YANG DIPERBAIKI (MENGATASI BLANK PUTIH) ---
+  // --- FUNGSI _buildAvatar() YANG DIPERBAIKI ---
   Widget _buildAvatar() {
-    // 1. KASUS MOBILE (Non-Web) dengan gambar baru yang di-pick: Membaca bytes secara asynchronous
-    if (_pickedImage != null && !kIsWeb) {
-      return FutureBuilder<Uint8List?>(
-        // ValueKey memaksa FutureBuilder me-render ulang setiap kali _pickedImage berubah
-        // Ini memastikan gambar baru muncul instan
-        key: ValueKey(_pickedImage!.path),
-        future: _pickedImage!.readAsBytes(),
-        builder: (context, snapshot) {
-          ImageProvider? mobileProvider;
-          Widget? childWidget;
-
-          if (snapshot.connectionState == ConnectionState.done &&
-              snapshot.hasData) {
-            // Data bytes sukses dimuat: Tampilkan gambar baru
-            mobileProvider = MemoryImage(snapshot.data!);
-          } else if (snapshot.hasError) {
-            // Error saat membaca file, gunakan gambar sesi lama
-            mobileProvider = _getSessionImageProvider();
-            childWidget = const Icon(Icons.error, size: 60, color: Colors.red);
-          } else {
-            // Sementara menunggu (loading), tampilkan gambar sesi lama
-            mobileProvider = _getSessionImageProvider();
-          }
-
-          return CircleAvatar(
-            radius: 60,
-            backgroundColor: Colors.grey.shade200,
-            backgroundImage: mobileProvider,
-            child: (mobileProvider == null && childWidget == null)
-                ? Icon(Icons.person, size: 60, color: Colors.grey.shade400)
-                : childWidget,
-          );
-        },
-      );
-    }
-
-    // 2. KASUS WEB / TIDAK ADA GAMBAR BARU DI-PICK / Mobile tanpa gambar baru
     ImageProvider? finalProvider;
+    Widget? childWidget;
 
-    if (_pickedImage != null && kIsWeb) {
-      // KASUS WEB: Langsung pakai NetworkImage (blob URL dari XFile)
-      finalProvider = NetworkImage(_pickedImage!.path);
+    if (_pickedImage != null) {
+      if (kIsWeb) {
+        // KASUS WEB: Langsung pakai NetworkImage (blob URL dari XFile)
+        finalProvider = NetworkImage(_pickedImage!.path, headers: const {'Cache-Control': 'no-cache'});
+      } else {
+        // KASUS MOBILE: Membaca bytes secara sinkron (lebih cepat di mobile)
+        finalProvider = MemoryImage(File(_pickedImage!.path).readAsBytesSync());
+      }
     } else {
       // KASUS LAINNYA: Ambil dari sesi (URL lama/terbaru)
       finalProvider = _getSessionImageProvider();
     }
+    
+    // Fallback jika tidak ada gambar
+    if (finalProvider == null) {
+        childWidget = Icon(Icons.person, size: 60, color: Colors.grey.shade400);
+    }
 
+    // Menggunakan _localAvatarKey untuk merebuild avatar di layar ini saat ganti gambar
     return CircleAvatar(
+      key: ValueKey('local-avatar-$_localAvatarKey'), 
       radius: 60,
       backgroundColor: Colors.grey.shade200,
       backgroundImage: finalProvider,
-      child: (finalProvider == null)
-          ? Icon(Icons.person, size: 60, color: Colors.grey.shade400)
-          : null,
+      child: childWidget,
     );
   }
   // ----------------------------------------------------------------------
-
 
   @override
   Widget build(BuildContext context) {
@@ -271,7 +257,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Center(
                 child: Stack(
                   children: [
-                    // Gunakan fungsi _buildAvatar() yang sudah diperbaiki
                     _buildAvatar(),
                     Positioned(
                       bottom: 0,
@@ -284,8 +269,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           onTap: _pickImage,
                           child: const Padding(
                             padding: EdgeInsets.all(6.0),
-                            child: Icon(Icons.edit,
-                                color: Colors.white, size: 20),
+                            child: Icon(
+                              Icons.edit,
+                              color: Colors.white,
+                              size: 20,
+                            ),
                           ),
                         ),
                       ),
@@ -294,7 +282,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // ... (lanjutkan TextFormField Nama Lengkap)
+              // ... (TextFormField Nama Lengkap)
               TextFormField(
                 controller: _namaLengkapController,
                 decoration: const InputDecoration(
@@ -310,7 +298,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              // ... (lanjutkan TextFormField Username)
+              // ... (TextFormField Username)
               TextFormField(
                 controller: _usernameController,
                 decoration: const InputDecoration(
@@ -326,7 +314,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 },
               ),
               const SizedBox(height: 32),
-              // ... (lanjutkan ElevatedButton Simpan Perubahan)
+              // ... (ElevatedButton Simpan Perubahan)
               ElevatedButton(
                 onPressed: _isLoading ? null : _updateProfile,
                 style: ElevatedButton.styleFrom(

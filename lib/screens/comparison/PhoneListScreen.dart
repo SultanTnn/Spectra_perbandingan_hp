@@ -54,20 +54,32 @@ class _PhoneListScreenState extends State<PhoneListScreen> {
                               if (loadingProgress == null) return child;
                               return Center(
                                 child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
+                                  value:
+                                      loadingProgress.expectedTotalBytes != null
                                       ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
+                                            loadingProgress.expectedTotalBytes!
                                       : null,
                                 ),
                               );
                             },
                             errorBuilder: (context, error, stackTrace) {
-                              return const Icon(Icons.broken_image, color: Colors.red, size: 40);
+                              return const Icon(
+                                Icons.broken_image,
+                                color: Colors.red,
+                                size: 40,
+                              );
                             },
                           )
-                        : const Icon(Icons.phone_android, size: 40, color: Colors.grey),
+                        : const Icon(
+                            Icons.phone_android,
+                            size: 40,
+                            color: Colors.grey,
+                          ),
                   ),
-                  title: Text(phone.namaModel, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  title: Text(
+                    phone.namaModel,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   subtitle: Text('Harga: ${phone.price}'),
                 ),
               );

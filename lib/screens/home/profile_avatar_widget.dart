@@ -4,7 +4,7 @@ class ProfileAvatarWidget extends StatelessWidget {
   final double radius;
   final Color primaryColor;
   final String? profileUrl;
-  final int cacheKey;
+  final int cacheKey; // Digunakan untuk memaksa reload gambar
   final bool sessionLoaded;
 
   const ProfileAvatarWidget({
@@ -19,13 +19,26 @@ class ProfileAvatarWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final double size = radius * 2;
+    
     // Cek apakah URL ada dan sesi sudah dimuat
-    final bool hasValidUrl = profileUrl != null && profileUrl!.isNotEmpty && sessionLoaded;
-    // Tambahkan cache buster key untuk memaksa reload gambar
-    final String finalUrl = '$profileUrl?cb=$cacheKey';
+    final bool hasValidUrl =
+        profileUrl != null && profileUrl!.isNotEmpty && sessionLoaded;
+
+    String finalUrl = '';
+
+    // --- LOGIKA PERBAIKAN START ---
+    if (hasValidUrl) {
+        // Menggunakan profileUrl! di sini aman karena hasValidUrl sudah mengeceknya
+        // Cek apakah URL sudah memiliki query param ('?'), jika ya gunakan '&'
+        final String separator = profileUrl!.contains('?') ? '&' : '?';
+        // URL final dengan cache buster key
+        finalUrl = '$profileUrl${separator}cb=$cacheKey'; 
+    }
+    // --- LOGIKA PERBAIKAN END ---
 
     return CircleAvatar(
-      key: ValueKey(cacheKey),
+      // Menggunakan kombinasi 'avatar' dan cacheKey untuk memastikan widget rebuild
+      key: ValueKey('avatar-$cacheKey'), 
       radius: radius,
       backgroundColor: Colors.white,
       child: hasValidUrl
@@ -36,7 +49,7 @@ class ProfileAvatarWidget extends StatelessWidget {
                 width: size,
                 height: size,
                 errorBuilder: (context, error, stackTrace) {
-                  // Tampilkan ikon error jika gambar gagal dimuat (misalnya URL salah)
+                  // Fallback jika gagal memuat gambar dari network
                   return Icon(
                     Icons.warning_amber_rounded,
                     color: Colors.red.shade700,
@@ -45,7 +58,6 @@ class ProfileAvatarWidget extends StatelessWidget {
                 },
                 loadingBuilder: (context, child, loadingProgress) {
                   if (loadingProgress == null) return child;
-                  // Tampilkan indikator loading saat gambar sedang diunduh
                   return Center(
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
@@ -60,7 +72,11 @@ class ProfileAvatarWidget extends StatelessWidget {
               ),
             )
           // Fallback utama jika tidak ada URL profil
-          : Icon(Icons.person, color: primaryColor, size: radius * 0.8),
+          : Icon(
+              Icons.person,
+              color: primaryColor,
+              size: radius * 1.2,
+            ), 
     );
   }
 }
@@ -92,10 +108,7 @@ class ProfileDrawerHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return DrawerHeader(
       margin: EdgeInsets.zero,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20.0,
-        vertical: 15.0,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 15.0),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [dynamicPrimary, dynamicAccent],
@@ -126,10 +139,14 @@ class ProfileDrawerHeader extends StatelessWidget {
               fontSize: 17,
               fontWeight: FontWeight.w700,
             ),
+            maxLines: 1, 
+            overflow: TextOverflow.ellipsis, 
           ),
           Text(
             username ?? getTranslatedText('user_aktif'),
             style: const TextStyle(color: Colors.white70, fontSize: 13),
+            maxLines: 1, 
+            overflow: TextOverflow.ellipsis, 
           ),
         ],
       ),

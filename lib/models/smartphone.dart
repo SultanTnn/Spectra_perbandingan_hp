@@ -1,5 +1,4 @@
-import 'package:flutter_application_1/service/api_service.dart';
-import 'dart:core';
+import '../service/api_service.dart';
 
 class Smartphone {
   final String id;
@@ -16,7 +15,9 @@ class Smartphone {
   final String price;
   final String brand;
   final String imageUrl;
-  final String? purchaseUrl; // <-- PENAMBAHAN PROPERTI BARU
+  final String? purchaseUrl; // Link default
+  final String? shopeeUrl; // Link Shopee
+  final String? tokopediaUrl; // Link Tokopedia
 
   Smartphone({
     required this.id,
@@ -33,55 +34,45 @@ class Smartphone {
     required this.price,
     required this.brand,
     required this.imageUrl,
-    this.purchaseUrl, // <-- PENAMBAHAN DI KONSTRUKTOR
+    this.purchaseUrl,
+    this.shopeeUrl,
+    this.tokopediaUrl,
   });
 
-  /// Factory Constructor untuk parsing JSON
-  factory Smartphone.fromJson(Map<String, dynamic> json, String brand) {
-    
-    // Ambil URL mentah dari JSON
+  factory Smartphone.fromJson(Map<String, dynamic> json, [String brand = '']) {
     String rawImagePath = json['image_url'] ?? '';
     String finalImageUrl = '';
-    
-    // --- Logika Perbaikan URL (TIDAK ADA PERUBAHAN) ---
-    
-    // Marker yang menandakan dimulainya path gambar yang benar: /api_hp/images/
+
+    // Logika gambar (sama seperti sebelumnya)
     const String pathMarker = '/api_hp/images/';
-    
-    // Cari posisi marker di dalam URL mentah (rawImagePath)
     int startIndex = rawImagePath.indexOf(pathMarker);
 
     if (startIndex != -1) {
-      // KASUS 1: URL mentah mengandung path yang benar (meski mungkin diapit path yang salah)
-      
-      // Ambil path relatif yang benar (e.g., /api_hp/images/tecno/Tecno+Spark+20+Pro.jpg)
       String correctRelativePath = rawImagePath.substring(startIndex);
-      
-      // Gabungkan Base IP (dari ApiService) dengan path relatif yang sudah benar.
       finalImageUrl = "${ApiService.baseIp}$correctRelativePath";
     } else {
-      // KASUS 2: URL mentah diasumsikan hanya nama file, atau struktur path benar-benar berbeda.
-      
-      // Buat nama folder Brand dengan casing yang benar (Apple, Vivo, dll.)
-      final String brandName = brand.toLowerCase();
-      final String normalizedBrandFolder = brandName.substring(0, 1).toUpperCase() + brandName.substring(1);
-      
-      // Gabungkan Base Image URL lengkap (dari ApiService) dengan Brand Folder dan nama file.
-      finalImageUrl = "${ApiService.baseImageUrl}$normalizedBrandFolder/$rawImagePath";
+      final String brandName = (json['brand'] ?? brand)
+          .toString()
+          .toLowerCase();
+      final String normalizedBrandFolder = brandName.isNotEmpty
+          ? brandName.substring(0, 1).toUpperCase() + brandName.substring(1)
+          : 'Unknown';
+      finalImageUrl =
+          "${ApiService.baseImageUrl}$normalizedBrandFolder/$rawImagePath";
     }
 
-    // Lakukan encoding URL secara penuh untuk menangani spasi (menjadi %20)
     final String encodedUrl = Uri.encodeFull(finalImageUrl);
 
-    print("Final Image URL: $encodedUrl");
-    
-    // --- PENGAMBILAN DATA purchaseUrl BARU ---
-    final String? purchaseUrl = json['purchase_url']; 
-    // Jika kolom 'purchase_url' tidak ada di JSON, nilai ini akan null secara aman.
-    
+    // Default search link jika API belum menyediakan link spesifik
+    String modelName = json['nama_model'] ?? '';
+    String searchShopee =
+        "https://shopee.co.id/search?keyword=$modelName $brand";
+    String searchTokopedia =
+        "https://www.tokopedia.com/search?st=product&q=$modelName $brand";
+
     return Smartphone(
       id: json['id'].toString(),
-      namaModel: json['nama_model'] ?? 'N/A',
+      namaModel: modelName,
       body: json['body'] ?? 'N/A',
       display: json['display'] ?? 'N/A',
       platform: json['platform'] ?? 'N/A',
@@ -92,9 +83,12 @@ class Smartphone {
       features: json['features'] ?? 'N/A',
       battery: json['battery'] ?? 'N/A',
       price: json['price'] ?? 'N/A',
-      brand: brand,
+      brand: json['brand'] ?? brand,
       imageUrl: encodedUrl,
-      purchaseUrl: purchaseUrl, // <-- SET NILAI BARU
+      purchaseUrl: json['purchase_url'],
+      // Jika JSON punya field 'shopee_url', pakai itu. Jika tidak, pakai link search.
+      shopeeUrl: json['shopee_url'] ?? searchShopee,
+      tokopediaUrl: json['tokopedia_url'] ?? searchTokopedia,
     );
   }
 }

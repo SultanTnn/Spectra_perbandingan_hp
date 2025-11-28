@@ -1,9 +1,12 @@
+// lib/screens/user/welcome_page.dart
+
 import 'package:flutter/material.dart';
 import 'dart:developer';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:url_launcher/url_launcher.dart'; // Pastikan sudah ada di pubspec.yaml
 
 // Import file lokal
 import '../../service/api_service.dart';
@@ -157,6 +160,89 @@ class _WelcomePageState extends State<WelcomePage> {
     }
   }
 
+  // --- FUNGSI PEMBELIAN LANGSUNG (NEW) ---
+  Future<void> _launchMarketplace(String? url, String storeName) async {
+    if (url == null || url.isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Link $storeName tidak tersedia")));
+      return;
+    }
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      // Fallback
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
+    }
+  }
+
+  void _showStoreOptions(Smartphone phone) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Beli ${phone.namaModel}",
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Pilih toko resmi untuk melanjutkan pembelian:",
+                style: TextStyle(color: Colors.grey),
+              ),
+              const SizedBox(height: 20),
+
+              // Tombol Shopee
+              ListTile(
+                leading: const Icon(
+                  Icons.shopping_bag,
+                  color: Colors.orange,
+                  size: 30,
+                ),
+                title: const Text(
+                  "Shopee Official Store",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.pop(context);
+                  _launchMarketplace(phone.shopeeUrl, "Shopee");
+                },
+              ),
+              const Divider(),
+
+              // Tombol Tokopedia
+              ListTile(
+                leading: const Icon(Icons.store, color: Colors.green, size: 30),
+                title: const Text(
+                  "Tokopedia Official Store",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                onTap: () {
+                  Navigator.pop(context);
+                  _launchMarketplace(phone.tokopediaUrl, "Tokopedia");
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = GoogleFonts.nunitoTextTheme(Theme.of(context).textTheme);
@@ -236,7 +322,7 @@ class _WelcomePageState extends State<WelcomePage> {
                       ),
                       child: PopupMenuButton<String>(
                         tooltip: "Pilih Merk HP",
-                        offset: const Offset(0, 50),
+                        offset: const Offset(0, 40),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
                         ),
@@ -281,7 +367,9 @@ class _WelcomePageState extends State<WelcomePage> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+
+                    const SizedBox(width: 6),
+
                     _buildTooltipMenuButton(
                       "Tim Dev",
                       Icons.group_rounded,
@@ -289,7 +377,9 @@ class _WelcomePageState extends State<WelcomePage> {
                       glassColor,
                       borderColor,
                     ),
-                    const SizedBox(width: 8),
+
+                    const SizedBox(width: 6),
+
                     _buildTooltipMenuButton(
                       "Tentang",
                       Icons.info_outline_rounded,
@@ -382,16 +472,16 @@ class _WelcomePageState extends State<WelcomePage> {
                 children: [
                   // --- HEADER PENCARIAN ---
                   Container(
-                    margin: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                    margin: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 30,
+                      horizontal: 20,
+                      vertical: 20,
                     ),
                     decoration: BoxDecoration(
                       color: _isDarkMode
                           ? Colors.black.withOpacity(0.3)
                           : Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(40),
+                      borderRadius: BorderRadius.circular(30),
                       border: Border.all(color: Colors.white.withOpacity(0.2)),
                     ),
                     child: Column(
@@ -399,26 +489,27 @@ class _WelcomePageState extends State<WelcomePage> {
                         const Icon(
                           Icons.smartphone_rounded,
                           color: Colors.orange,
-                          size: 40,
+                          size: 32,
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 10),
                         Text(
                           'SPECTRA',
                           style: GoogleFonts.fredoka(
-                            fontSize: 40,
+                            fontSize: 32,
                             fontWeight: FontWeight.w900,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         Text(
                           'Bandingkan spesifikasi ribuan handphone dengan mudah.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
+                            fontSize: 13,
                           ),
                         ),
-                        const SizedBox(height: 25),
+                        const SizedBox(height: 15),
                         LayoutBuilder(
                           builder: (context, constraints) {
                             return Autocomplete<SearchOption>(
@@ -457,21 +548,31 @@ class _WelcomePageState extends State<WelcomePage> {
                                   ) {
                                     return Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 20,
+                                        horizontal: 16,
                                       ),
+                                      height: 45,
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(50),
                                       ),
+                                      alignment: Alignment.center,
                                       child: TextField(
                                         controller: controller,
                                         focusNode: focusNode,
+                                        style: const TextStyle(fontSize: 14),
                                         decoration: InputDecoration(
                                           hintText: "Cari HP...",
+                                          hintStyle: const TextStyle(
+                                            fontSize: 14,
+                                          ),
                                           border: InputBorder.none,
                                           icon: Icon(
                                             Icons.search,
                                             color: const Color(0xFF553C9A),
+                                            size: 20,
+                                          ),
+                                          contentPadding: const EdgeInsets.only(
+                                            bottom: 10,
                                           ),
                                         ),
                                       ),
@@ -504,7 +605,7 @@ class _WelcomePageState extends State<WelcomePage> {
                           // 1. BODY KONTEN (Hasil Pencarian / Perbandingan)
                           Container(
                             constraints: BoxConstraints(
-                              minHeight: screenHeight * 0.7,
+                              minHeight: screenHeight * 0.6,
                             ),
                             color: _isDarkMode
                                 ? const Color(0xFF1E1E2C)
@@ -565,29 +666,31 @@ class _WelcomePageState extends State<WelcomePage> {
     required Color borderColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: glassColor,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: borderColor),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(width: 8),
+          Icon(icon, color: Colors.white, size: 14),
+          const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,
+              fontSize: 12,
             ),
           ),
           if (isDropdown) ...[
-            const SizedBox(width: 4),
+            const SizedBox(width: 2),
             const Icon(
               Icons.keyboard_arrow_down,
               color: Colors.white,
-              size: 16,
+              size: 14,
             ),
           ],
         ],
@@ -666,7 +769,7 @@ class _WelcomePageState extends State<WelcomePage> {
           ),
         ),
         SizedBox(
-          height: 950, // Fixed Height agar bisa di-scroll
+          height: 650,
           child: SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -684,64 +787,93 @@ class _WelcomePageState extends State<WelcomePage> {
 
   Widget _buildKolomPerbandingan(Smartphone phone) {
     return Container(
-      width: 260,
+      width: 240,
+      height: 600, // Fixed Height
       margin: const EdgeInsets.only(right: 16, bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _isDarkMode ? const Color(0xFF2C2C3E) : Colors.white,
         borderRadius: BorderRadius.circular(25),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 10,
-            offset: const Offset(0, 5),
+            offset: Offset(0, 5),
           ),
         ],
       ),
-      child: Column(
-        children: [
-          Container(
-            height: 140,
-            padding: const EdgeInsets.all(10),
-            child: phone.imageUrl.isNotEmpty
-                ? Image.network(phone.imageUrl, fit: BoxFit.contain)
-                : const Icon(Icons.phone_android, size: 50),
-          ),
-          const SizedBox(height: 15),
-          Text(
-            phone.namaModel,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          _buildSpecPill("Harga", phone.price, Colors.green),
-          _buildSpecPill(
-            "Layar",
-            _parseSpec(phone.display, "Type:"),
-            Colors.blue,
-          ),
-          _buildSpecPill(
-            "Chipset",
-            _parseSpec(phone.platform, "Chipset:"),
-            Colors.orange,
-          ),
-          _buildSpecPill(
-            "Memori",
-            _parseSpec(phone.memory, "Internal:"),
-            Colors.purple,
-          ),
-          _buildSpecPill(
-            "Kamera",
-            _parseSpec(phone.mainCamera, "Triple:") ?? "Lihat detail",
-            Colors.pink,
-          ),
-          _buildSpecPill(
-            "Baterai",
-            _parseSpec(phone.battery, "Type:"),
-            Colors.teal,
-          ),
-        ],
+      clipBehavior: Clip.hardEdge,
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            Container(
+              height: 120,
+              padding: const EdgeInsets.all(10),
+              child: phone.imageUrl.isNotEmpty
+                  ? Image.network(phone.imageUrl, fit: BoxFit.contain)
+                  : const Icon(Icons.phone_android, size: 50),
+            ),
+
+            // --- TOMBOL BELI LANGSUNG (Menggantikan Keranjang) ---
+            SizedBox(
+              height: 35,
+              child: ElevatedButton.icon(
+                onPressed: () => _showStoreOptions(phone),
+                icon: const Icon(Icons.shopping_cart, size: 14),
+                label: const Text(
+                  "Beli Sekarang",
+                  style: TextStyle(fontSize: 11),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6C63FF),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                ),
+              ),
+            ),
+            const SizedBox(height: 10),
+
+            // ----------------------------------------------------
+            const SizedBox(height: 15),
+            Text(
+              phone.namaModel,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 20),
+            _buildSpecPill("Harga", phone.price, Colors.green),
+            _buildSpecPill(
+              "Layar",
+              _parseSpec(phone.display, "Type:"),
+              Colors.blue,
+            ),
+            _buildSpecPill(
+              "Chipset",
+              _parseSpec(phone.platform, "Chipset:"),
+              Colors.orange,
+            ),
+            _buildSpecPill(
+              "Memori",
+              _parseSpec(phone.memory, "Internal:"),
+              Colors.purple,
+            ),
+            _buildSpecPill(
+              "Kamera",
+              _parseSpec(phone.mainCamera, "Triple:") ?? "Lihat detail",
+              Colors.pink,
+            ),
+            _buildSpecPill(
+              "Baterai",
+              _parseSpec(phone.battery, "Type:"),
+              Colors.teal,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -865,6 +997,8 @@ class _WelcomePageState extends State<WelcomePage> {
           Text(
             value,
             textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,

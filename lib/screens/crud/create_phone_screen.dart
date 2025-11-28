@@ -69,9 +69,9 @@ class _CreatePhoneScreenState extends State<CreatePhoneScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error koneksi: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error koneksi: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -104,89 +104,128 @@ class _CreatePhoneScreenState extends State<CreatePhoneScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Form Isian Data HP',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              Text(
+                'Form Isian Data HP',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               SizedBox(height: 16),
 
               TextFormField(
                 controller: _namaModelController,
-                decoration: InputDecoration(labelText: 'Nama Model', border: OutlineInputBorder()),
-                validator: (v) => v == null || v.isEmpty ? 'Nama Model tidak boleh kosong' : null,
+                decoration: InputDecoration(
+                  labelText: 'Nama Model',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (v) => v == null || v.isEmpty
+                    ? 'Nama Model tidak boleh kosong'
+                    : null,
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _priceController,
-                decoration: InputDecoration(labelText: 'Price', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Price',
+                  border: OutlineInputBorder(),
+                ),
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _bodyController,
-                decoration: InputDecoration(labelText: 'Body', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Body',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _displayController,
-                decoration: InputDecoration(labelText: 'Display', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Display',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _platformController,
-                decoration: InputDecoration(labelText: 'Platform', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Platform',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _memoryController,
-                decoration: InputDecoration(labelText: 'Memory', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Memory',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _mainCameraController,
-                decoration: InputDecoration(labelText: 'Main Camera', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Main Camera',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _selfieCameraController,
-                decoration: InputDecoration(labelText: 'Selfie Camera', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Selfie Camera',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _commsController,
-                decoration: InputDecoration(labelText: 'Comms', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Comms',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _featuresController,
-                decoration: InputDecoration(labelText: 'Features', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Features',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
               SizedBox(height: 12),
 
               TextFormField(
                 controller: _batteryController,
-                decoration: InputDecoration(labelText: 'Battery', border: OutlineInputBorder()),
+                decoration: InputDecoration(
+                  labelText: 'Battery',
+                  border: OutlineInputBorder(),
+                ),
                 maxLines: 3,
               ),
 
               SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isLoading ? null : _savePhone,
-                style: ElevatedButton.styleFrom(padding: EdgeInsets.symmetric(vertical: 16)),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                ),
                 child: _isLoading
                     ? CircularProgressIndicator(color: Colors.white)
                     : Text('Simpan Data Baru', style: TextStyle(fontSize: 16)),

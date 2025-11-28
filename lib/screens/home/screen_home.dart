@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'home_settings.dart';
-import 'home_widgets.dart';
+import 'home_widgets.dart'; // Pastikan file ini ada
 import '../auth/login_screen.dart';
 import '../../utils/session.dart';
 import '../profile_screen.dart';
@@ -57,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen>
   Color _getShimmerHighlightColor() =>
       _isDarkModeActive ? Colors.grey.shade700 : Colors.grey.shade100;
 
-  static const String BASE_URL = 'http://10.61.9.141/api_hp';
+  static const String BASE_URL = 'http://192.168.0.2/api_hp';
 
   // Animasi Background Gradient
   late AnimationController _animationController;
@@ -264,6 +264,7 @@ class _HomeScreenState extends State<HomeScreen>
       _sessionLoaded = true;
       if (_lastProfileImageUrl != UserSession.profileImageUrl) {
         _lastProfileImageUrl = UserSession.profileImageUrl;
+        // Bersihkan query param lama jika ada
         if (_lastProfileImageUrl != null) {
           _lastProfileImageUrl = _lastProfileImageUrl!.split('?').first;
         }
@@ -274,6 +275,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   Future<void> _logout() async {
     await UserSession.clearSession();
+    if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -417,7 +419,18 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  // --- WIDGET BUILDER DARI HomeWidgets ---
+  // Helper untuk mendapatkan URL gambar dengan Cache Buster yang aman
+  String? _getProfileImageUrl() {
+    if (_lastProfileImageUrl == null ||
+        _lastProfileImageUrl!.isEmpty ||
+        !_sessionLoaded) {
+      return null;
+    }
+    final separator = _lastProfileImageUrl!.contains('?') ? '&' : '?';
+    return '$_lastProfileImageUrl$separator'
+        'cb=$_profileImageCacheKey';
+  }
+
   @override
   Widget build(BuildContext context) {
     final Color dynamicPrimary = _getPrimaryColor();
@@ -490,7 +503,7 @@ class _HomeScreenState extends State<HomeScreen>
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Text(
-                '${_getTranslatedText('produk_ditemukan')}"${trimmedQuery}" (${searchResults.length} ${_getTranslatedText('ditemukan')})',
+                '${_getTranslatedText('produk_ditemukan')}"$trimmedQuery" (${searchResults.length} ${_getTranslatedText('ditemukan')})',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -573,15 +586,10 @@ class _HomeScreenState extends State<HomeScreen>
               key: ValueKey(_profileImageCacheKey),
               radius: 15,
               backgroundColor: Colors.white24,
-              backgroundImage: (_lastProfileImageUrl != null && _sessionLoaded)
-                  ? NetworkImage(
-                      '$_lastProfileImageUrl?cb=$_profileImageCacheKey',
-                    )
+              backgroundImage: _getProfileImageUrl() != null
+                  ? NetworkImage(_getProfileImageUrl()!)
                   : null,
-              child:
-                  (_lastProfileImageUrl == null ||
-                      _lastProfileImageUrl!.isEmpty ||
-                      !_sessionLoaded)
+              child: _getProfileImageUrl() == null
                   ? Icon(Icons.person, color: _getPrimaryColor(), size: 20)
                   : null,
             ),
@@ -591,6 +599,7 @@ class _HomeScreenState extends State<HomeScreen>
         ],
       ),
 
+      // --- DRAWER (REVISI: Tata letak lebih aman) ---
       drawer: Drawer(
         backgroundColor: _getCardColor(),
         child: ListView(
@@ -617,20 +626,15 @@ class _HomeScreenState extends State<HomeScreen>
                     key: ValueKey(_profileImageCacheKey),
                     radius: 30,
                     backgroundColor: Colors.white,
-                    backgroundImage:
-                        (_lastProfileImageUrl != null && _sessionLoaded)
-                        ? NetworkImage(
-                            '$_lastProfileImageUrl?cb=$_profileImageCacheKey',
-                          )
+                    backgroundImage: _getProfileImageUrl() != null
+                        ? NetworkImage(_getProfileImageUrl()!)
                         : null,
-                    child:
-                        (_lastProfileImageUrl == null ||
-                            _lastProfileImageUrl!.isEmpty ||
-                            !_sessionLoaded)
+                    child: _getProfileImageUrl() == null
                         ? Icon(Icons.person, color: dynamicPrimary, size: 36)
                         : null,
                   ),
                   const SizedBox(height: 12),
+                  // REVISI: Tambahan maxLines dan overflow untuk keamanan UI
                   Text(
                     UserSession.namaLengkap ??
                         (_sessionLoaded
@@ -641,10 +645,14 @@ class _HomeScreenState extends State<HomeScreen>
                       fontSize: 17,
                       fontWeight: FontWeight.w700,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   Text(
                     UserSession.username ?? _getTranslatedText('user_aktif'),
                     style: const TextStyle(color: Colors.white70, fontSize: 13),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),
@@ -712,7 +720,6 @@ class _HomeScreenState extends State<HomeScreen>
               );
             },
           ),
-
           RefreshIndicator(
             color: dynamicPrimary,
             onRefresh: fetchBrands,
@@ -759,13 +766,9 @@ class _HomeScreenState extends State<HomeScreen>
                             ),
                             textAlign: TextAlign.center,
                           ),
-
                           const SizedBox(height: 30),
-
                           widgets.buildSearchAndCompareBar(),
-
                           const SizedBox(height: 20),
-
                           Icon(
                             Icons.keyboard_arrow_down,
                             color: _getTextColor(),
@@ -774,7 +777,6 @@ class _HomeScreenState extends State<HomeScreen>
                         ],
                       ),
                     ),
-
                     Transform.translate(
                       offset: const Offset(0, -45),
                       child: Container(

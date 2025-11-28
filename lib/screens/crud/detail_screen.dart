@@ -52,7 +52,7 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> fetchDetail() async {
     // PASTIKAN IP ADDRESS INI SAMA DENGAN IP XAMPP ANDA
     final url = Uri.parse(
-      'http://10.61.9.141/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
+      'http://192.168.0.2/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
     );
 
     try {

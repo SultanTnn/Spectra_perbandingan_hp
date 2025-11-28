@@ -73,7 +73,7 @@ class _CompareScreenState extends State<CompareScreen> {
     } else {
       // Untuk emulator/perangkat fisik, gunakan IP yang sesuai
       // GANTI IP INI JIKA IP ANDA BERBEDA!
-      return "http://10.61.9.141/api_hp/";
+      return "http://192.168.0.2/api_hp/";
     }
   }
 
