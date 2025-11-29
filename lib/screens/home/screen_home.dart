@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen>
   Color _getShimmerHighlightColor() =>
       _isDarkModeActive ? Colors.grey.shade700 : Colors.grey.shade100;
 
-  static const String BASE_URL = 'http://192.168.43.60/api_hp';
+  static const String BASE_URL = 'http://192.168.1.6/api_hp';
 
   // Animasi Background Gradient
   late AnimationController _animationController;
@@ -92,7 +92,7 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Load Language
     final code = prefs.getString(AppLanguage.keyLanguageCode) ?? 'id';
-    AppLanguage.currentLanguageCode = code;
+    AppLanguage.languageNotifier.value = code;
 
     // Load Theme
     final isDark = prefs.getBool(AppLanguage.keyDarkMode) ?? false;
@@ -446,7 +446,7 @@ class _HomeScreenState extends State<HomeScreen>
         'cb=$_profileImageCacheKey';
   }
 
-  // --- BARU DITAMBAH: LOGIKA & WIDGET SORTING DI FRONT-END ---
+  // LOGIKA & WIDGET SORTING
 
   void _showSortOptionsDialog() {
     showDialog(

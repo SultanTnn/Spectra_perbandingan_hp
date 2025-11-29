@@ -1,18 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import '../comparison/brand_screen.dart'; // Import BrandScreen
-import '../home/settings/app_language.dart'; // Import AppLanguage
-// Di file home_widgets.dart
+import '../comparison/brand_screen.dart';
+import '../home/settings/app_language.dart';
 
-// ======================================================================
-// 1. DATA MODEL
-// ======================================================================
-
+// DATA MODEL
 class Smartphone {
   final String name;
   final String brand;
@@ -28,11 +23,7 @@ class Smartphone {
   }
 }
 
-// ======================================================================
 // 2. WIDGET BUILDER
-// ======================================================================
-
-// Class ini berisi semua widget builder yang sebelumnya ada di _HomeScreenState
 class HomeWidgets {
   final BuildContext context;
   final List<String> brands;

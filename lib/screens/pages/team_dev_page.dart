@@ -150,7 +150,7 @@ class TeamDevPage extends StatelessWidget {
                 children: [
                   const SizedBox(height: 10),
                   Text(
-                    "Kelompok 1 - S1 Informatika",
+                    "Kelompok 3 - S1 Informatika",
                     style: GoogleFonts.nunito(
                       color: Colors.white70,
                       fontSize: 16,

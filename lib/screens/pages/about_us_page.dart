@@ -95,9 +95,6 @@ class AboutUsPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
               children: [
-                // ============================================================
-                // BAGIAN 1: DESKRIPSI APLIKASI (HEADER)
-                // ============================================================
                 const SizedBox(height: 10),
                 Container(
                   padding: const EdgeInsets.all(24),
@@ -176,10 +173,6 @@ class AboutUsPage extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 15),
-
-                // ============================================================
-                // BAGIAN 2: LIST ANGGOTA (TANPA ROLE)
-                // ============================================================
                 Column(
                   children: teamMembers.map((member) {
                     return _buildCompactMemberCard(context, member);
@@ -189,7 +182,7 @@ class AboutUsPage extends StatelessWidget {
                 const SizedBox(height: 30),
 
                 Text(
-                  "© 2025 Kelompok 1 - S1 Informatika",
+                  "© 2025 Kelompok 3 - S1 Informatika",
                   style: GoogleFonts.nunito(
                     color: Colors.white54,
                     fontSize: 12,

@@ -101,14 +101,13 @@ class UserSession {
     role = userRole;
     profileImageUrl = userProfileImage;
     // Saat login, cacheKey dipertahankan atau di-reset ke 0
-    cacheKey = 0; // Mulai dari 0 saat sesi baru dibuat
+    cacheKey = 0; 
 
     await saveData(); // Simpan ke storage
   }
 
   // Fungsi Logout (Hapus semua data)
   static Future<void> clearSession() async {
-    // 1. Kosongkan variabel static
     id = null;
     username = null;
     namaLengkap = null;
@@ -119,7 +118,6 @@ class UserSession {
 
     // 2. Hapus dari memori HP
     final prefs = await SharedPreferences.getInstance();
-    // Gunakan prefs.clear() karena Anda ingin menghapus semua data sesi
     await prefs.clear(); 
 
     print('--- Session Cleared (Logout) ---');

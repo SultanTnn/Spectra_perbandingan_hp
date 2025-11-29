@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -46,7 +45,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     super.dispose();
   }
 
-  // ... (Fungsi _pickImage tetap sama, tidak perlu diubah) ...
   Future<void> _pickImage() async {
     showModalBottomSheet(
       context: context,
@@ -81,7 +79,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               if (image != null) {
                 setState(() {
                   _pickedImage = image;
-                  _localAvatarKey = DateTime.now().millisecondsSinceEpoch; // Update local key
+                  _localAvatarKey = DateTime.now().millisecondsSinceEpoch; 
                 });
               }
               Navigator.of(ctx).pop();
@@ -92,7 +90,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  // --- FUNGSI UPDATE YANG SUDAH DIPERBAIKI (Penanganan Error JSON) ---
   Future<void> _updateProfile() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -161,7 +158,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           UserSession.profileImageUrl = returnedImageUrl;
         }
 
-        // *** TAMBAHAN PENTING: UPDATE CACHE KEY ***
         // Paksa semua widget avatar lainnya untuk reload
         UserSession.cacheKey = UserSession.cacheKey + 1; 
 
@@ -201,7 +197,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     // Tambahkan cacheKey ke URL sesi agar gambar lama yang baru di-update tetap ter-refresh di layar ini
     if (UserSession.profileImageUrl != null &&
         UserSession.profileImageUrl!.isNotEmpty) {
-      // Menggunakan logika separator yang sama seperti di ProfileAvatarWidget
+
       final String separator = UserSession.profileImageUrl!.contains('?') ? '&' : '?';
       final String finalUrl = '${UserSession.profileImageUrl}$separator${UserSession.cacheKey}';
       return NetworkImage(finalUrl);
@@ -209,7 +205,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return null;
   }
 
-  // --- FUNGSI _buildAvatar() YANG DIPERBAIKI ---
   Widget _buildAvatar() {
     ImageProvider? finalProvider;
     Widget? childWidget;
@@ -223,11 +218,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         finalProvider = MemoryImage(File(_pickedImage!.path).readAsBytesSync());
       }
     } else {
-      // KASUS LAINNYA: Ambil dari sesi (URL lama/terbaru)
       finalProvider = _getSessionImageProvider();
     }
-    
-    // Fallback jika tidak ada gambar
     if (finalProvider == null) {
         childWidget = Icon(Icons.person, size: 60, color: Colors.grey.shade400);
     }
@@ -241,7 +233,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: childWidget,
     );
   }
-  // ----------------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {

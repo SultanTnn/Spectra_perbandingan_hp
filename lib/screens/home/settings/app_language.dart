@@ -1,8 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AppLanguage {
   static const String keyLanguageCode = 'app_language_code';
   static const String keyDarkMode = 'is_dark_mode';
+  static ValueNotifier<String> languageNotifier = ValueNotifier('id');
 
   static final Map<String, Map<String, String>> _localizedValues = {
     'id': {
@@ -10,6 +12,8 @@ class AppLanguage {
       'profile_saya': 'Profile Saya',
       'pengaturan': 'Pengaturan',
       'tentang_aplikasi': 'Tentang Aplikasi',
+      'font_size': 'Ukuran Font', // Ditambahkan
+      'storage_cache': 'Penyimpanan / Hapus Cache', // Ditambahkan
       'log_out': 'Log Out',
       'selamat_datang': 'Selamat Datang!',
       'user_aktif': 'User Aktif',
@@ -53,12 +57,45 @@ class AppLanguage {
       'notif_subtitle': 'Terima berita & pembaruan perbandingan',
       'privasi_keamanan': 'Privasi & Keamanan',
       'tidak_ada_brand': 'Tidak ada Brand yang tersedia.',
+      'urutkan_dengan': 'Urutkan dengan',
+      'semua_merk_az': 'Semua Merk (A-Z)',
+      'harga_tertinggi': 'Harga Tertinggi',
+      'harga_terendah': 'Harga Terendah',
+      'rekomendasi_terbaik': 'Rekomendasi Terbaik',
+      'penyimpanan_judul': 'Penyimpanan & Cache',
+      'total_cache': 'Total Sampah Cache',
+      'hapus_cache': 'Bersihkan Cache',
+      'menghitung': 'Menghitung...',
+      'bersihkan_konfirmasi': 'Bersihkan Sekarang',
+      'cache_dibersihkan': 'Cache berhasil dibersihkan!',
+      'rincian_cache': 'Rincian Penyimpanan',
+      'gambar_cache': 'Cache Gambar',
+      'data_sementara': 'Data Sementara',
+      'versi': 'Versi',
+      'dibuat_oleh': 'Dikembangkan oleh',
+      'deskripsi_singkat':
+          'SPECTRA adalah aplikasi perbandingan spesifikasi smartphone terlengkap untuk membantu Anda menemukan gadget impian.',
+      'riwayat_pembaruan': 'Riwayat Pembaruan',
+      'hak_cipta': 'Hak Cipta',
+      'ukuran_font': 'Ukuran Font',
+      'pratinjau': 'Pratinjau Tampilan',
+      'contoh_judul': 'Judul Artikel',
+      'contoh_teks':
+          'Ini adalah contoh bagaimana teks akan terlihat pada perangkat Anda. Sesuaikan slider di bawah untuk kenyamanan membaca.',
+      'kecil': 'Kecil',
+      'besar': 'Besar',
+      'reset': 'Reset',
+      'jenis_font': 'Jenis Font',
+      'pilih_gaya': 'Pilih Gaya Huruf',
+      'font_standar': 'Standar',
     },
     'en': {
       'beranda': 'Home',
       'profile_saya': 'My Profile',
       'pengaturan': 'Settings',
       'tentang_aplikasi': 'About App',
+      'font_size': 'Font Size', // Ditambahkan
+      'storage_cache': 'Storage / Clear Cache', // Ditambahkan
       'log_out': 'Log Out',
       'selamat_datang': 'Welcome!',
       'user_aktif': 'Active User',
@@ -101,12 +138,45 @@ class AppLanguage {
       'notif_subtitle': 'Receive news & comparison updates',
       'privasi_keamanan': 'Privacy & Security',
       'tidak_ada_brand': 'No Brands available.',
+      'urutkan_dengan': 'Sort by',
+      'semua_merk_az': 'All Brands (A-Z)',
+      'harga_tertinggi': 'Highest Price',
+      'harga_terendah': 'Lowest Price',
+      'rekomendasi_terbaik': 'Best Recommendation',
+      'penyimpanan_judul': 'Storage & Cache',
+      'total_cache': 'Total Cache Junk',
+      'hapus_cache': 'Clear Cache',
+      'menghitung': 'Calculating...',
+      'bersihkan_konfirmasi': 'Clean Now',
+      'cache_dibersihkan': 'Cache cleared successfully!',
+      'rincian_cache': 'Storage Details',
+      'gambar_cache': 'Image Cache',
+      'data_sementara': 'Temporary Data',
+      'versi': 'Version',
+      'dibuat_oleh': 'Developed by',
+      'deskripsi_singkat':
+          'SPECTRA is the most complete smartphone specification comparison app to help you find your dream gadget.',
+      'riwayat_pembaruan': 'Changelog History',
+      'hak_cipta': 'Copyright',
+      'ukuran_font': 'Font Size',
+      'pratinjau': 'Display Preview',
+      'contoh_judul': 'Article Headline',
+      'contoh_teks':
+          'This is an example of how text will appear on your device. Adjust the slider below for reading comfort.',
+      'kecil': 'Small',
+      'besar': 'Large',
+      'reset': 'Reset',
+      'jenis_font': 'Font Family',
+      'pilih_gaya': 'Choose Typeface',
+      'font_standar': 'Default',
     },
     'ms': {
       'beranda': 'Laman Utama',
       'profile_saya': 'Profil Saya',
       'pengaturan': 'Tetapan',
       'tentang_aplikasi': 'Mengenai Aplikasi',
+      'font_size': 'Saiz Fon', // Ditambahkan
+      'storage_cache': 'Penyimpanan / Kosongkan Cache', // Ditambahkan
       'log_out': 'Log Keluar',
       'selamat_datang': 'Selamat Datang!',
       'user_aktif': 'Pengguna Aktif',
@@ -150,14 +220,62 @@ class AppLanguage {
       'notif_subtitle': 'Terima berita & kemas kini perbandingan',
       'privasi_keamanan': 'Privasi & Keselamatan',
       'tidak_ada_brand': 'Tiada Jenama tersedia.',
+      'urutkan_dengan': 'Disusun mengikut',
+      'semua_merk_az': 'Semua Jenama (A-Z)',
+      'harga_tertinggi': 'Harga Tertinggi',
+      'harga_terendah': 'Harga Terendah',
+      'rekomendasi_terbaik': 'Cadangan Terbaik',
+      'penyimpanan_judul': 'Penyimpanan & Cache',
+      'total_cache': 'Jumlah Cache',
+      'hapus_cache': 'Bersihkan Cache',
+      'menghitung': 'Mengira...',
+      'bersihkan_konfirmasi': 'Bersihkan Sekarang',
+      'cache_dibersihkan': 'Cache berjaya dibersihkan!',
+      'rincian_cache': 'Butiran Penyimpanan',
+      'gambar_cache': 'Cache Imej',
+      'data_sementara': 'Data Sementara',
+      'versi': 'Versi',
+      'dibuat_oleh': 'Dibangunkan oleh',
+      'deskripsi_singkat':
+          'SPECTRA adalah aplikasi perbandingan spesifikasi telefon pintar terlengkap untuk membantu anda mencari gajet impian.',
+      'riwayat_pembaruan': 'Sejarah Kemaskini',
+      'hak_cipta': 'Hak Cipta',
+      'ukuran_font': 'Saiz Fon',
+      'pratinjau': 'Pratonton Paparan',
+      'contoh_judul': 'Tajuk Artikel',
+      'contoh_teks':
+          'Ini adalah contoh bagaimana teks akan kelihatan pada peranti anda. Laraskan gelangsar di bawah untuk keselesaan membaca.',
+      'kecil': 'Kecil',
+      'besar': 'Besar',
+      'reset': 'Set Semula',
+      'jenis_font': 'Jenis Fon',
+      'pilih_gaya': 'Pilih Gaya Huruf',
+      'font_standar': 'Lalai',
     },
   };
 
-  static String currentLanguageCode = 'id';
-
+  // Getter untuk mengambil text
   static String get(String key) {
-    return _localizedValues[currentLanguageCode]?[key] ??
+    return _localizedValues[languageNotifier.value]?[key] ??
         _localizedValues['id']![key] ??
         key;
+  }
+
+  // Fungsi untuk memuat bahasa yang tersimpan saat aplikasi mulai
+  static Future<void> loadLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? savedLang = prefs.getString(keyLanguageCode);
+    if (savedLang != null && _localizedValues.containsKey(savedLang)) {
+      languageNotifier.value = savedLang;
+    }
+  }
+
+  // Fungsi untuk mengganti bahasa dan menyimpannya
+  static Future<void> changeLanguage(String languageCode) async {
+    if (_localizedValues.containsKey(languageCode)) {
+      languageNotifier.value = languageCode;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(keyLanguageCode, languageCode);
+    }
   }
 }

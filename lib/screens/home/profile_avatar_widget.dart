@@ -28,16 +28,11 @@ class ProfileAvatarWidget extends StatelessWidget {
 
     // --- LOGIKA PERBAIKAN START ---
     if (hasValidUrl) {
-        // Menggunakan profileUrl! di sini aman karena hasValidUrl sudah mengeceknya
-        // Cek apakah URL sudah memiliki query param ('?'), jika ya gunakan '&'
         final String separator = profileUrl!.contains('?') ? '&' : '?';
-        // URL final dengan cache buster key
         finalUrl = '$profileUrl${separator}cb=$cacheKey'; 
     }
-    // --- LOGIKA PERBAIKAN END ---
 
     return CircleAvatar(
-      // Menggunakan kombinasi 'avatar' dan cacheKey untuk memastikan widget rebuild
       key: ValueKey('avatar-$cacheKey'), 
       radius: radius,
       backgroundColor: Colors.white,

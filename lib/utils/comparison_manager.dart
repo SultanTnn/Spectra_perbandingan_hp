@@ -2,7 +2,6 @@
 
 class ComparisonManager {
   // Daftar HP yang dipilih untuk perbandingan, bisa dari brand manapun.
-  // Format: [{'brand': 'samsung', 'id': '1'}, {'brand': 'xiaomi', 'id': '10'}]
   static List<Map<String, String>> selectedPhones = [];
 
   static bool isSelected(String id) {

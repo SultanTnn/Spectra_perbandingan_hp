@@ -5,12 +5,9 @@ import 'package:flutter_application_1/models/smartphone.dart';
 import 'dart:io' show Platform;
 
 class ApiService {
-  // ======================================================
-  // 1. KONFIGURASI IP LOKAL
-  // ======================================================
 
-  // 💡 IP PC Anda (Host)
-  static const String _localHostIp = "http://192.168.43.60";
+  // IP PC Anda (Host)
+  static const String _localHostIp = "http://192.168.1.6";
 
   static const String _apiFolder = "/api_hp/";
 
@@ -19,10 +16,6 @@ class ApiService {
 
   // URL menggunakan IP Lokal PC
   static String get _localUrl => "$_localHostIp$_apiFolder";
-
-  // ======================================================
-  // 2. LOGIKA PENENTUAN BASE URL
-  // ======================================================
 
   static String get baseUrl {
     // 1. Lingkungan Web: Paksa menggunakan IP Lokal PC Anda
@@ -45,19 +38,13 @@ class ApiService {
     }
   }
 
-  // ======================================================
+  
   // 3. DEFINISI ENDPOINT API & BASE URL GAMBAR
-  // ======================================================
-
-  // Base URL Dinamis untuk Gambar (Base URL API + folder 'images/')
   static String get baseImageUrl {
-    // Contoh: http://192.168.43.60/api_hp/images/
+    // Contoh: http://192.168.1.6/api_hp/images/
     return "${baseUrl}images/";
   }
 
-  /// Ensures we return a fully-qualified image URL.
-  /// If the server returns a path like 'uploads/profile.jpg' or '/images/profile.jpg'
-  /// this function will normalize it to: 'http://<host>/api_hp/images/...'
   static String normalizeImageUrl(String path) {
     if (path.startsWith('http')) return path;
     // Remove leading slashes
@@ -70,7 +57,7 @@ class ApiService {
   }
 
   // Properti untuk mendapatkan IP murni (digunakan di Smartphone.fromJson)
-  static String get baseIp => _localHostIp; // <-- KOREKSI DILAKUKAN DI SINI
+  static String get baseIp => _localHostIp; 
 
   static String get login => "${baseUrl}login.php";
   static String get register => "${baseUrl}register.php";
@@ -79,10 +66,7 @@ class ApiService {
   static String get getPhonesByBrand => "${baseUrl}get_phones_by_brand.php";
   static String get createPhone => "${baseUrl}create_phone.php";
 
-  // ======================================================
   // 4. FUNGSI FETCH DATA
-  // ======================================================
-
   Future<List<Smartphone>> fetchPhonesByBrand(String brand) async {
     final url = Uri.parse("$getPhonesByBrand?brand=$brand");
     print("Fetching data from: $url");

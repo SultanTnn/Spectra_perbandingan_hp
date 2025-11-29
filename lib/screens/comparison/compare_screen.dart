@@ -66,7 +66,7 @@ class _CompareScreenState extends State<CompareScreen> {
     if (kIsWeb) {
       return "http://localhost/api_hp/";
     } else {
-      return "http://192.168.43.60/api_hp/";
+      return "http://192.168.1.6/api_hp/";
     }
   }
 
