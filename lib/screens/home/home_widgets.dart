@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import '../comparison/brand_screen.dart'; // Import BrandScreen
-import 'home_settings.dart'; // Import AppLanguage
+import '../home/settings/app_language.dart'; // Import AppLanguage
 // Di file home_widgets.dart
 
 // ======================================================================

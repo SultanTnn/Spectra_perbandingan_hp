@@ -4,7 +4,7 @@ import '../../models/smartphone.dart';
 
 class PhoneListScreen extends StatefulWidget {
   final String brand;
-  const PhoneListScreen({Key? key, required this.brand}) : super(key: key);
+  const PhoneListScreen({super.key, required this.brand});
 
   @override
   State<PhoneListScreen> createState() => _PhoneListScreenState();

@@ -15,9 +15,9 @@ class Smartphone {
   final String price;
   final String brand;
   final String imageUrl;
-  final String? purchaseUrl; // Link default
-  final String? shopeeUrl; // Link Shopee
-  final String? tokopediaUrl; // Link Tokopedia
+  final String? purchaseUrl; 
+  final String? shopeeUrl; 
+  final String? tokopediaUrl; 
 
   Smartphone({
     required this.id,
@@ -42,11 +42,8 @@ class Smartphone {
   factory Smartphone.fromJson(Map<String, dynamic> json, [String brand = '']) {
     String rawImagePath = json['image_url'] ?? '';
     String finalImageUrl = '';
-
-    // Logika gambar (sama seperti sebelumnya)
     const String pathMarker = '/api_hp/images/';
     int startIndex = rawImagePath.indexOf(pathMarker);
-
     if (startIndex != -1) {
       String correctRelativePath = rawImagePath.substring(startIndex);
       finalImageUrl = "${ApiService.baseIp}$correctRelativePath";
@@ -60,10 +57,7 @@ class Smartphone {
       finalImageUrl =
           "${ApiService.baseImageUrl}$normalizedBrandFolder/$rawImagePath";
     }
-
     final String encodedUrl = Uri.encodeFull(finalImageUrl);
-
-    // Default search link jika API belum menyediakan link spesifik
     String modelName = json['nama_model'] ?? '';
     String searchShopee =
         "https://shopee.co.id/search?keyword=$modelName $brand";
@@ -86,7 +80,6 @@ class Smartphone {
       brand: json['brand'] ?? brand,
       imageUrl: encodedUrl,
       purchaseUrl: json['purchase_url'],
-      // Jika JSON punya field 'shopee_url', pakai itu. Jika tidak, pakai link search.
       shopeeUrl: json['shopee_url'] ?? searchShopee,
       tokopediaUrl: json['tokopedia_url'] ?? searchTokopedia,
     );

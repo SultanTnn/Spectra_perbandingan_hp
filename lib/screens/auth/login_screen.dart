@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_application_1/service/api_service.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:google_fonts/google_fonts.dart';
 import 'dart:convert';
 import 'dart:ui';
-import 'package:google_fonts/google_fonts.dart';
 import 'register_screen.dart';
-import '../home/screen_home.dart' hide UserSession;
+import '../home/screen_home.dart';
 import '../../utils/session.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -22,7 +22,6 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
 
-  // Warna Tema
   final primaryColor = const Color(0xFF553C9A);
   final secondaryColor = const Color(0xFF6C63FF);
 
@@ -44,7 +43,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final url = Uri.parse(ApiService.login);
-
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -69,12 +67,14 @@ class _LoginScreenState extends State<LoginScreen> {
         UserSession.username = userUsername;
         UserSession.namaLengkap = userNamaLengkap;
         UserSession.role = userRole;
+
         if (userProfileImage != null && userProfileImage.isNotEmpty) {
           var actual = ApiService.normalizeImageUrl(userProfileImage);
           UserSession.profileImageUrl = actual;
         } else {
           UserSession.profileImageUrl = userProfileImage;
         }
+
         await UserSession.saveData();
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -106,10 +106,10 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       String errorMessage;
+
       if (e.toString().contains('Failed host lookup') ||
           e.toString().contains('Connection refused')) {
-        errorMessage =
-            'Gagal terhubung ke server. Cek koneksi internet atau IP Address.';
+        errorMessage = 'Gagal terhubung ke server. Cek koneksi internet atau IP Address.';
       } else {
         errorMessage = 'Terjadi kesalahan: $e';
       }
@@ -137,31 +137,23 @@ class _LoginScreenState extends State<LoginScreen> {
       body: AnimatedGradientBackground(
         child: Stack(
           children: [
-            // 1. KONTEN UTAMA (CENTERED)
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(height: 40), // Jarak untuk tombol back
-                    // --- KARTU LOGIN GLASSMORPHISM ---
+                    const SizedBox(height: 40),
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(
-                        40,
-                      ), // Sudut sangat bulat
+                      borderRadius: BorderRadius.circular(40),
                       child: BackdropFilter(
-                        filter: ImageFilter.blur(
-                          sigmaX: 15,
-                          sigmaY: 15,
-                        ), // Efek Blur Kaca
+                        filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 30,
                             vertical: 40,
                           ),
                           decoration: BoxDecoration(
-                            // Warna putih semi-transparan
                             color: Colors.white.withOpacity(0.75),
                             borderRadius: BorderRadius.circular(40),
                             border: Border.all(
@@ -180,7 +172,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             key: _formKey,
                             child: Column(
                               children: [
-                                // Ikon Gembok Lucu
                                 Container(
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
@@ -201,8 +192,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 20),
-
-                                // Judul SPECTRA
                                 Text(
                                   'SPECTRA',
                                   style: GoogleFonts.fredoka(
@@ -221,27 +210,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                                 const SizedBox(height: 30),
-
-                                // Field Username
                                 _buildTextField(
                                   controller: _usernameController,
                                   label: 'Username',
                                   icon: Icons.person_rounded,
                                 ),
-
                                 const SizedBox(height: 16),
-
-                                // Field Password
                                 _buildTextField(
                                   controller: _passwordController,
                                   label: 'Password',
                                   icon: Icons.key_rounded,
                                   isPassword: true,
                                 ),
-
                                 const SizedBox(height: 30),
-
-                                // Tombol Login
                                 SizedBox(
                                   width: double.infinity,
                                   height: 55,
@@ -251,13 +232,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                       backgroundColor: primaryColor,
                                       foregroundColor: Colors.white,
                                       elevation: 8,
-                                      shadowColor: primaryColor.withOpacity(
-                                        0.5,
-                                      ),
+                                      shadowColor:
+                                          primaryColor.withOpacity(0.5),
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(
-                                          30,
-                                        ), // Tombol kapsul
+                                        borderRadius:
+                                            BorderRadius.circular(30),
                                       ),
                                     ),
                                     child: _isLoading
@@ -279,10 +258,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           ),
                                   ),
                                 ),
-
                                 const SizedBox(height: 24),
-
-                                // Link Daftar
                                 Column(
                                   children: [
                                     Text(
@@ -308,7 +284,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                           color: secondaryColor,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 16,
-                                          decoration: TextDecoration.underline,
+                                          decoration:
+                                              TextDecoration.underline,
                                           decorationColor: secondaryColor,
                                         ),
                                       ),
@@ -321,7 +298,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 20),
                     Text(
                       '© 2025 Kelompok 3',
@@ -334,17 +310,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-
-            // 2. TOMBOL KEMBALI (DI POJOK KIRI ATAS, LUAR CARD)
             Positioned(
               top: 10,
               left: 10,
               child: SafeArea(
                 child: Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2), // Glass effect
+                    color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.3),
+                    ),
                   ),
                   child: IconButton(
                     onPressed: () => Navigator.pop(context),
@@ -364,7 +340,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Helper Widget untuk Text Field yang Lucu
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -374,7 +349,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return TextFormField(
       controller: controller,
       obscureText: isPassword ? !_isPasswordVisible : false,
-      style: TextStyle(fontWeight: FontWeight.w700, color: primaryColor),
+      style: TextStyle(
+        fontWeight: FontWeight.w700,
+        color: primaryColor,
+      ),
       decoration: InputDecoration(
         labelText: label,
         hintText: 'Masukkan ${label.toLowerCase()}',
@@ -388,13 +366,13 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
         prefixIcon: Icon(icon, color: secondaryColor),
         filled: true,
-        fillColor: Colors.white, // Putih solid agar kontras di atas kaca
+        fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(
           vertical: 18,
           horizontal: 20,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30), // Sangat bulat
+          borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
@@ -431,7 +409,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 }
 
-// --- ANIMATED BACKGROUND CLASS ---
 class AnimatedGradientBackground extends StatefulWidget {
   final Widget child;
   const AnimatedGradientBackground({super.key, required this.child});
@@ -441,7 +418,8 @@ class AnimatedGradientBackground extends StatefulWidget {
       _AnimatedGradientBackgroundState();
 }
 
-class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
+class _AnimatedGradientBackgroundState
+    extends State<AnimatedGradientBackground>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Alignment> _topAlignmentAnimation;
@@ -450,44 +428,51 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    );
+    _controller =
+        AnimationController(vsync: this, duration: const Duration(seconds: 10));
+
     _topAlignmentAnimation = TweenSequence<Alignment>([
       TweenSequenceItem(
-        tween: Tween(begin: Alignment.topLeft, end: Alignment.topRight),
+        tween: Tween(
+            begin: Alignment.topLeft, end: Alignment.topRight),
         weight: 1,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: Alignment.topRight, end: Alignment.bottomRight),
+        tween: Tween(
+            begin: Alignment.topRight, end: Alignment.bottomRight),
         weight: 1,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: Alignment.bottomRight, end: Alignment.bottomLeft),
+        tween: Tween(
+            begin: Alignment.bottomRight, end: Alignment.bottomLeft),
         weight: 1,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: Alignment.bottomLeft, end: Alignment.topLeft),
+        tween: Tween(
+            begin: Alignment.bottomLeft, end: Alignment.topLeft),
         weight: 1,
       ),
     ]).animate(_controller);
 
     _bottomAlignmentAnimation = TweenSequence<Alignment>([
       TweenSequenceItem(
-        tween: Tween(begin: Alignment.bottomRight, end: Alignment.bottomLeft),
+        tween: Tween(
+            begin: Alignment.bottomRight, end: Alignment.bottomLeft),
         weight: 1,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: Alignment.bottomLeft, end: Alignment.topLeft),
+        tween: Tween(
+            begin: Alignment.bottomLeft, end: Alignment.topLeft),
         weight: 1,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: Alignment.topLeft, end: Alignment.topRight),
+        tween: Tween(
+            begin: Alignment.topLeft, end: Alignment.topRight),
         weight: 1,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: Alignment.topRight, end: Alignment.bottomRight),
+        tween: Tween(
+            begin: Alignment.topRight, end: Alignment.bottomRight),
         weight: 1,
       ),
     ]).animate(_controller);

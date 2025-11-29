@@ -4,11 +4,12 @@ import 'dart:convert';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
-import 'home_settings.dart';
-import 'home_widgets.dart'; // Pastikan file ini ada
+import 'home_widgets.dart';
 import '../auth/login_screen.dart';
 import '../../utils/session.dart';
 import '../profile_screen.dart';
+import '../../screens/home/settings/app_language.dart';
+import '../home/settings/settings_screen.dart'; 
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +35,9 @@ class _HomeScreenState extends State<HomeScreen>
   int _currentHintIndex = 0;
   Timer? _hintTimer;
   bool _isDarkModeActive = false;
+  
+  // --- BARU DITAMBAH: State untuk Sorting ---
+  String _currentSortBy = 'alphabetical'; 
 
   // --- KONSTANTA WARNA DINAMIS BERDASARKAN TEMA ---
   Color _getPrimaryColor() =>
@@ -116,7 +120,8 @@ class _HomeScreenState extends State<HomeScreen>
     super.initState();
     _loadSettings().then((_) {
       _loadSessionData();
-      fetchBrands();
+      // DIPERBAIKI: Panggil fetchBrands dengan sorting saat ini
+      fetchBrands(sortBy: _currentSortBy); 
       _startGradientAnimation();
     });
 
@@ -206,6 +211,8 @@ class _HomeScreenState extends State<HomeScreen>
         weight: 1,
       ),
     ]).animate(_animationController);
+
+    _animationController.forward();
   }
 
   @override
@@ -310,14 +317,16 @@ class _HomeScreenState extends State<HomeScreen>
   void _navigateToSettings() async {
     Navigator.pop(context);
 
+    // DIPERBAIKI: Gunakan SettingsScreen dan ambil return value (true jika ada perubahan)
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const SettingsScreen()),
+      MaterialPageRoute(builder: (_) => const SettingsPage()), 
     );
 
     if (result == true) {
       await _loadSettings();
-      fetchBrands();
+      // Panggil fetchBrands dengan sorting saat ini agar data dimuat ulang dengan bahasa baru
+      fetchBrands(sortBy: _currentSortBy); 
       setState(() {});
     }
   }
@@ -387,8 +396,10 @@ class _HomeScreenState extends State<HomeScreen>
     }
   }
 
-  Future<void> fetchBrands() async {
-    final url = Uri.parse('$BASE_URL/get_brands.php');
+  // DIPERBAIKI: Menerima parameter sorting
+  Future<void> fetchBrands({String sortBy = 'alphabetical'}) async {
+    // BARU: Tambahkan parameter sort ke URL
+    final url = Uri.parse('$BASE_URL/get_brands.php?sort=$sortBy'); 
     try {
       final resp = await http.get(url).timeout(const Duration(seconds: 10));
 
@@ -398,7 +409,11 @@ class _HomeScreenState extends State<HomeScreen>
         setState(() {
           brands = List<String>.from(data.map((b) => b.toString()));
 
-          brands.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+          // Lakukan sorting A-Z di Flutter HANYA jika mode 'alphabetical'
+          if (sortBy == 'alphabetical') {
+             brands.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+          }
+          
           loading = false;
           errorMessage = '';
         });
@@ -431,6 +446,133 @@ class _HomeScreenState extends State<HomeScreen>
         'cb=$_profileImageCacheKey';
   }
 
+  // --- BARU DITAMBAH: LOGIKA & WIDGET SORTING DI FRONT-END ---
+
+  void _showSortOptionsDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: _getCardColor(),
+          title: Text(
+            _getTranslatedText('urutkan_dengan'),
+            style: TextStyle(color: _getBrandTextColor()),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Opsi 1: Alphabetical (A-Z)
+              _buildSortOption(context, 'alphabetical', _getTranslatedText('semua_merk_az'), Icons.sort_by_alpha),
+              
+              // Opsi 2: Harga Tertinggi
+              _buildSortOption(context, 'highest_price', _getTranslatedText('harga_tertinggi'), Icons.trending_up),
+              
+              // Opsi 3: Harga Terendah
+              _buildSortOption(context, 'lowest_price', _getTranslatedText('harga_terendah'), Icons.trending_down),
+              
+              // Opsi 4: Rekomendasi Terbaik
+              _buildSortOption(context, 'best_recommendation', _getTranslatedText('rekomendasi_terbaik'), Icons.star),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildSortOption(
+      BuildContext context, String value, String title, IconData icon) {
+    final bool isSelected = _currentSortBy == value;
+    final Color dynamicPrimary = _getPrimaryColor();
+    final Color dynamicTextColor = _getBrandTextColor();
+
+    return ListTile(
+      leading: Icon(icon, color: isSelected ? dynamicPrimary : dynamicTextColor.withOpacity(0.7)),
+      title: Text(
+        title,
+        style: TextStyle(
+          color: dynamicTextColor,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      trailing: isSelected ? Icon(Icons.check, color: dynamicPrimary) : null,
+      onTap: () {
+        if (!isSelected) {
+          setState(() {
+            _currentSortBy = value;
+            loading = true; // Aktifkan loading/shimmer
+          });
+          // Panggil API dengan sorting baru
+          fetchBrands(sortBy: value); 
+        }
+        Navigator.pop(context);
+      },
+    );
+  }
+
+  Widget _buildSortBar() {
+    final Color dynamicPrimary = _getPrimaryColor();
+    final Color dynamicTextColor = _getBrandTextColor();
+    
+    // Tentukan teks yang akan ditampilkan
+    String getCurrentSortTitle() {
+      switch (_currentSortBy) {
+        case 'highest_price':
+          return _getTranslatedText('harga_tertinggi');
+        case 'lowest_price':
+          return _getTranslatedText('harga_terendah');
+        case 'best_recommendation':
+          return _getTranslatedText('rekomendasi_terbaik');
+        case 'alphabetical':
+        default:
+          return _getTranslatedText('semua_merk_az');
+      }
+    }
+
+    // Tampilkan tombol drop-down sederhana untuk sorting
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            '${_getTranslatedText('urutkan_dengan')}: ',
+            style: TextStyle(
+              color: _getBrandSubTextColor(),
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          InkWell(
+            onTap: _showSortOptionsDialog,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: _getCardColor(),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: dynamicPrimary.withOpacity(0.5)),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    getCurrentSortTitle(),
+                    style: TextStyle(
+                      color: dynamicPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(Icons.arrow_drop_down, color: dynamicPrimary, size: 20),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // --- BAGIAN BUILD (REVISI TATA LETAK) ---
   @override
   Widget build(BuildContext context) {
     final Color dynamicPrimary = _getPrimaryColor();
@@ -473,6 +615,9 @@ class _HomeScreenState extends State<HomeScreen>
 
     Widget contentList;
     final trimmedQuery = query.trim();
+    
+    // Tentukan apakah Sort Bar dan Konten List utama tampil
+    final bool showBrandListContent = trimmedQuery.isEmpty && !loading && errorMessage.isEmpty;
 
     if (loading) {
       contentList = widgets.buildLoadingShimmer(
@@ -487,10 +632,12 @@ class _HomeScreenState extends State<HomeScreen>
             loading = true;
             errorMessage = '';
           });
-          fetchBrands();
+          fetchBrands(sortBy: _currentSortBy); // Panggil ulang dengan sort state saat ini
         },
       );
     } else if (trimmedQuery.isNotEmpty) {
+      // Logika Search tetap sama
+      // ... (Search implementation)
       if (isSearchingProducts) {
         contentList = widgets.buildLoadingShimmer(
           count: 3,
@@ -534,6 +681,7 @@ class _HomeScreenState extends State<HomeScreen>
         }
       }
     } else {
+      // Mode Tampil Merek (dengan Sorting)
       contentList = Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -556,6 +704,88 @@ class _HomeScreenState extends State<HomeScreen>
         ],
       );
     }
+    
+    // Tentukan header content yang akan ditampilkan di bagian bawah area gradient
+    final headerContent = [
+      // 1. Header (Area Gradient)
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 50,
+          bottom: 40, // Kurangi padding bawah agar konten utama naik
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _getTranslatedText('bandingkan_semua'),
+              style: GoogleFonts.montserrat(
+                fontSize: 40,
+                fontWeight: FontWeight.w900,
+                color: _getTextColor(),
+                letterSpacing: 1.0,
+                shadows: [
+                  Shadow(
+                    offset: const Offset(0, 4),
+                    blurRadius: 8,
+                    color: Colors.black.withOpacity(0.35),
+                  ),
+                ],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _getTranslatedText('slogan_hp'),
+              style: TextStyle(
+                fontSize: 16,
+                color: _getSubTextColor(),
+                fontWeight: FontWeight.w400,
+                letterSpacing: 0.2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 30),
+            widgets.buildSearchAndCompareBar(),
+            const SizedBox(height: 20),
+            Icon(
+              Icons.keyboard_arrow_down,
+              color: _getTextColor(),
+              size: 30,
+            ),
+          ],
+        ),
+      ),
+      
+      // 2. Sorting Bar (Disisipkan di antara Header dan Konten Utama)
+      if (showBrandListContent)
+        _buildSortBar(),
+    ];
+    
+    // Konten utama list (brand list / search results)
+    final mainContent = Container(
+      decoration: BoxDecoration(
+        color: _isDarkModeActive ? dynamicCardColor : Colors.white,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 24,
+            offset: const Offset(0, -6),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: 20,
+        vertical: 20,
+      ),
+      child: contentList,
+    );
 
     return Scaffold(
       backgroundColor: _getBackgroundColor(),
@@ -599,7 +829,7 @@ class _HomeScreenState extends State<HomeScreen>
         ],
       ),
 
-      // --- DRAWER (REVISI: Tata letak lebih aman) ---
+      // --- DRAWER (Tetap Sama) ---
       drawer: Drawer(
         backgroundColor: _getCardColor(),
         child: ListView(
@@ -634,7 +864,6 @@ class _HomeScreenState extends State<HomeScreen>
                         : null,
                   ),
                   const SizedBox(height: 12),
-                  // REVISI: Tambahan maxLines dan overflow untuk keamanan UI
                   Text(
                     UserSession.namaLengkap ??
                         (_sessionLoaded
@@ -722,88 +951,17 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           RefreshIndicator(
             color: dynamicPrimary,
-            onRefresh: fetchBrands,
+            onRefresh: () => fetchBrands(sortBy: _currentSortBy),
             child: CustomScrollView(
               slivers: [
+                // 1. Header dan Sort Bar
                 SliverList(
-                  delegate: SliverChildListDelegate([
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.only(
-                        left: 24,
-                        right: 24,
-                        top: 50,
-                        bottom: 80,
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _getTranslatedText('bandingkan_semua'),
-                            style: GoogleFonts.montserrat(
-                              fontSize: 40,
-                              fontWeight: FontWeight.w900,
-                              color: _getTextColor(),
-                              letterSpacing: 1.0,
-                              shadows: [
-                                Shadow(
-                                  offset: const Offset(0, 4),
-                                  blurRadius: 8,
-                                  color: Colors.black.withOpacity(0.35),
-                                ),
-                              ],
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 10),
-                          Text(
-                            _getTranslatedText('slogan_hp'),
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: _getSubTextColor(),
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: 0.2,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 30),
-                          widgets.buildSearchAndCompareBar(),
-                          const SizedBox(height: 20),
-                          Icon(
-                            Icons.keyboard_arrow_down,
-                            color: _getTextColor(),
-                            size: 30,
-                          ),
-                        ],
-                      ),
-                    ),
-                    Transform.translate(
-                      offset: const Offset(0, -45),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: _isDarkModeActive
-                              ? dynamicCardColor
-                              : Colors.white,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(30),
-                            topRight: Radius.circular(30),
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.08),
-                              blurRadius: 24,
-                              offset: const Offset(0, -6),
-                            ),
-                          ],
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 20,
-                        ),
-                        child: contentList,
-                      ),
-                    ),
-                  ]),
+                  delegate: SliverChildListDelegate(headerContent),
+                ),
+                
+                // 2. Konten Utama (Daftar Merek/Hasil Pencarian)
+                SliverToBoxAdapter(
+                  child: mainContent,
                 ),
               ],
             ),

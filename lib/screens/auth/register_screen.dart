@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'dart:ui'; // Untuk efek Glassmorphism
 import 'package:google_fonts/google_fonts.dart';
+import 'dart:convert';
+import 'dart:ui';
 import '../../service/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -22,12 +22,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   bool _isPasswordVisible = false;
 
-  // --- DEFINISI WARNA (Dibuat Static agar tidak Null) ---
   static const Color primaryColor = Color(0xFF553C9A);
   static const Color secondaryColor = Color(0xFF6C63FF);
-  // ignore: unused_field
   static const Color blueColor = Color(0xFF0175C2);
-  // ----------------------------------------------------
 
   @override
   void dispose() {
@@ -39,13 +36,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    setState(() {
-      _isLoading = true;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final url = Uri.parse(ApiService.register);
@@ -76,7 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         );
-        Navigator.pop(context); // Kembali ke Login
+        Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -101,30 +94,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Background Animasi
       body: AnimatedGradientBackground(
         child: Stack(
           children: [
-            // 1. KONTEN UTAMA (CENTERED)
             Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const SizedBox(
-                      height: 60,
-                    ), // Jarak atas agar tidak ketabrak tombol back
-                    // --- KARTU REGISTER GLASSMORPHISM ---
+                    const SizedBox(height: 60),
+
                     ClipRRect(
                       borderRadius: BorderRadius.circular(40),
                       child: BackdropFilter(
@@ -153,7 +142,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             key: _formKey,
                             child: Column(
                               children: [
-                                // Ikon Daftar Lucu
                                 Container(
                                   padding: const EdgeInsets.all(20),
                                   decoration: BoxDecoration(
@@ -175,7 +163,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 const SizedBox(height: 20),
 
-                                // Judul
                                 Text(
                                   'Buat Akun',
                                   style: GoogleFonts.fredoka(
@@ -195,7 +182,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 const SizedBox(height: 30),
 
-                                // Field Nama Lengkap
                                 _buildTextField(
                                   controller: _namaController,
                                   label: 'Nama Lengkap',
@@ -203,7 +189,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Field Username
                                 _buildTextField(
                                   controller: _usernameController,
                                   label: 'Username',
@@ -211,7 +196,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Field Email
                                 _buildTextField(
                                   controller: _emailController,
                                   label: 'Email',
@@ -220,7 +204,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 ),
                                 const SizedBox(height: 16),
 
-                                // Field Password
                                 _buildTextField(
                                   controller: _passwordController,
                                   label: 'Password',
@@ -230,7 +213,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                                 const SizedBox(height: 30),
 
-                                // Tombol Daftar
                                 SizedBox(
                                   width: double.infinity,
                                   height: 55,
@@ -240,9 +222,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       backgroundColor: primaryColor,
                                       foregroundColor: Colors.white,
                                       elevation: 8,
-                                      shadowColor: primaryColor.withOpacity(
-                                        0.5,
-                                      ),
+                                      shadowColor:
+                                          primaryColor.withOpacity(0.5),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(30),
                                       ),
@@ -269,7 +250,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                                 const SizedBox(height: 20),
 
-                                // Link Login
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
@@ -314,7 +294,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
 
-            // 2. TOMBOL KEMBALI (POJOK KIRI ATAS)
             Positioned(
               top: 10,
               left: 10,
@@ -343,7 +322,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-  // Helper Widget untuk Text Field yang Seragam
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -355,7 +333,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       controller: controller,
       obscureText: isPassword ? !_isPasswordVisible : false,
       keyboardType: keyboardType,
-      style: const TextStyle(fontWeight: FontWeight.w700, color: primaryColor),
+      style: const TextStyle(
+        fontWeight: FontWeight.w700,
+        color: primaryColor,
+      ),
       decoration: InputDecoration(
         labelText: label,
         hintText: 'Masukkan ${label.toLowerCase()}',
@@ -378,13 +359,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderRadius: BorderRadius.circular(30),
           borderSide: BorderSide.none,
         ),
+        focusedBorder: const OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(30)),
+          borderSide: BorderSide(color: secondaryColor, width: 2),
+        ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: BorderSide(color: Colors.grey[200]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30),
-          borderSide: const BorderSide(color: secondaryColor, width: 2),
+          borderSide: BorderSide(color: Colors.grey.shade200),
         ),
         suffixIcon: isPassword
             ? IconButton(
@@ -419,7 +400,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-// --- ANIMATED BACKGROUND CLASS (Sama seperti Welcome/Login) ---
 class AnimatedGradientBackground extends StatefulWidget {
   final Widget child;
   const AnimatedGradientBackground({super.key, required this.child});
@@ -429,7 +409,8 @@ class AnimatedGradientBackground extends StatefulWidget {
       _AnimatedGradientBackgroundState();
 }
 
-class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
+class _AnimatedGradientBackgroundState
+    extends State<AnimatedGradientBackground>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<Alignment> _topAlignmentAnimation;
@@ -442,6 +423,7 @@ class _AnimatedGradientBackgroundState extends State<AnimatedGradientBackground>
       vsync: this,
       duration: const Duration(seconds: 10),
     );
+
     _topAlignmentAnimation = TweenSequence<Alignment>([
       TweenSequenceItem(
         tween: Tween(begin: Alignment.topLeft, end: Alignment.topRight),

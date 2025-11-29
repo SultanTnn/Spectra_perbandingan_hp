@@ -1,5 +1,3 @@
-// detail_screen.dart (Versi Final Siap Tempel)
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/crud/edit_phone_screen.dart';
 import 'package:http/http.dart' as http;
@@ -34,7 +32,6 @@ class _DetailScreenState extends State<DetailScreen> {
     fetchDetail();
   }
 
-  // --- FUNGSI MEMBUKA URL EKSTERNAL ---
   Future<void> _launchUrl(String url) async {
     final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
@@ -47,10 +44,8 @@ class _DetailScreenState extends State<DetailScreen> {
       print('Gagal membuka tautan: $url');
     }
   }
-  // -------------------------------------
 
   Future<void> fetchDetail() async {
-    // PASTIKAN IP ADDRESS INI SAMA DENGAN IP XAMPP ANDA
     final url = Uri.parse(
       'http://192.168.0.2/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
     );
@@ -63,7 +58,6 @@ class _DetailScreenState extends State<DetailScreen> {
 
         var fetchedData = j as Map<String, dynamic>;
 
-        // Tambahkan kunci 'purchase_url' jika tidak ada, untuk memastikan variabel di build() tidak error.
         if (!fetchedData.containsKey('purchase_url')) {
           fetchedData['purchase_url'] = '';
         }
@@ -87,8 +81,6 @@ class _DetailScreenState extends State<DetailScreen> {
       });
     }
   }
-
-  // ... (Fungsi _deletePhone dan _showDeleteDialog tidak diubah) ...
 
   Future<void> _deletePhone() async {
     showDialog(
@@ -159,7 +151,6 @@ class _DetailScreenState extends State<DetailScreen> {
   void _goToEditScreen() {
     if (data == null) return;
 
-    // NAVIGASI DENGAN TANDA '!' UNTUK MENGHILANGKAN WARNING NULL SAFETY KARENA SUDAH DICEK DI ATAS
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -202,17 +193,14 @@ class _DetailScreenState extends State<DetailScreen> {
     final primaryColor = Colors.blue.shade700;
     final secondaryColor = Colors.blue.shade300;
 
-    // --- PERBAIKAN: Mengambil URL dan membersihkan spasi tersembunyi dengan .trim() ---
     final String purchaseUrlRaw = data?['purchase_url'] ?? '';
     final String cleanedPurchaseUrl = purchaseUrlRaw.trim();
 
-    // --- DEBUGGING CONSOLE FINAL ---
     print('Purchase URL (Raw): $purchaseUrlRaw');
     print('Purchase URL (Cleaned): $cleanedPurchaseUrl');
     print(
       'Apakah Tombol Keranjang Muncul? ${data != null && cleanedPurchaseUrl.isNotEmpty}',
     );
-    // -------------------------
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -224,28 +212,19 @@ class _DetailScreenState extends State<DetailScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
-
         actions: [
-          // --- TOMBOL BELI (IKON KERANJANG MERAH) ---
-          // Kondisi dicek pada cleanedPurchaseUrl
           if (data != null && cleanedPurchaseUrl.isNotEmpty)
             IconButton(
-              // Diubah ke warna merah agar terlihat jelas
               icon: const Icon(Icons.shopping_cart, color: Colors.red),
-              // Menggunakan cleanedPurchaseUrl untuk membuka tautan
               onPressed: () => _launchUrl(cleanedPurchaseUrl),
               tooltip: 'Beli Sekarang',
             ),
-
-          // ----------------------------------------
           if (UserSession.role == 'admin') ...[
-            // Tombol EDIT
             IconButton(
               icon: const Icon(Icons.edit),
               onPressed: data != null ? _goToEditScreen : null,
               tooltip: 'Edit Data',
             ),
-            // Tombol Hapus
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: data != null ? () => _showDeleteDialog(context) : null,
@@ -283,7 +262,6 @@ class _DetailScreenState extends State<DetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Card Utama untuk Detail
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
@@ -318,7 +296,6 @@ class _DetailScreenState extends State<DetailScreen> {
                             ),
                           ),
                           const Divider(height: 30, thickness: 2),
-
                           _buildDetailRow('Harga', data?['price'] ?? '-'),
                           _buildDetailRow('Body', data?['body'] ?? '-'),
                           _buildDetailRow('Display', data?['display'] ?? '-'),

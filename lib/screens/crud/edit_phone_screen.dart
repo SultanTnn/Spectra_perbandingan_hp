@@ -5,7 +5,7 @@ import 'dart:convert';
 
 class EditPhoneScreen extends StatefulWidget {
   final String brand;
-  final Map<String, dynamic> initialData; // Data awal HP yang akan diedit
+  final Map<String, dynamic> initialData;
 
   const EditPhoneScreen({
     super.key,
@@ -21,7 +21,6 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
-  // 11 Controller
   final _namaModelController = TextEditingController();
   final _bodyController = TextEditingController();
   final _displayController = TextEditingController();
@@ -37,7 +36,6 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
   @override
   void initState() {
     super.initState();
-    // Isi controller dengan data awal saat inisialisasi
     _namaModelController.text = widget.initialData['nama_model'] ?? '';
     _bodyController.text = widget.initialData['body'] ?? '';
     _displayController.text = widget.initialData['display'] ?? '';
@@ -52,26 +50,20 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
   }
 
   Future<void> _updatePhone() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // ❗ PERBAIKAN DI SINI: Menggunakan ApiService.updatePhone
-      // Ini akan menghasilkan URL yang benar (misalnya 10.0.2.2/api_hp/update_phone.php)
       final url = Uri.parse(ApiService.updatePhone);
 
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
-          // Kirim ID dan Brand sebagai kunci, diikuti 11 data form
-          'id': widget.initialData['id']
-              .toString(), // ID wajib dikirim untuk UPDATE
+          'id': widget.initialData['id'].toString(),
           'brand': widget.brand,
           'nama_model': _namaModelController.text,
           'body': _bodyController.text,
@@ -91,10 +83,9 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
       final data = json.decode(response.body);
 
       if (data['status'] == 'success' || data['status'] == 'info') {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(data['message'])));
-        // Pop 2 kali: Tutup EditScreen, lalu DetailScreen (sebelumnya harus di-refresh)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data['message'])),
+        );
         Navigator.pop(context, true);
         Navigator.pop(context, true);
       } else {
@@ -103,9 +94,9 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
         );
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error koneksi: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error koneksi: $e')),
+      );
     } finally {
       setState(() {
         _isLoading = false;
@@ -147,19 +138,14 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              // --- FIELD FORM YANG SAMA SEPERTI CREATE SCREEN ---
               TextFormField(
                 controller: _namaModelController,
                 decoration: const InputDecoration(
                   labelText: 'Nama Model',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Nama Model tidak boleh kosong';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    value == null || value.isEmpty ? 'Nama Model tidak boleh kosong' : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -250,20 +236,12 @@ class _EditPhoneScreenState extends State<EditPhoneScreen> {
                 ),
                 maxLines: 3,
               ),
-
-              // --- AKHIR FIELD FORM ---
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: _isLoading ? null : _updatePhone,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text(
-                        'Simpan Perubahan',
-                        style: TextStyle(fontSize: 16),
-                      ),
+                    : const Text('Simpan Perubahan'),
               ),
             ],
           ),

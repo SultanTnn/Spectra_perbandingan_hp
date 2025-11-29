@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'dart:developer';
 
 class CompareScreen extends StatefulWidget {
-  // phonesToCompare berisi list of maps: [{'brand':'samsung', 'id':'1'}, {'brand':'xiaomi', 'id':'5'}]
   final List<Map<String, String>> phonesToCompare;
 
   const CompareScreen({super.key, required this.phonesToCompare});
@@ -19,7 +18,6 @@ class _CompareScreenState extends State<CompareScreen> {
   bool loading = true;
   String errorMessage = "";
 
-  // Bobot untuk perhitungan skor akhir (Total harus 100)
   final Map<String, double> weights = {
     'price': 15,
     'battery': 15,
@@ -33,7 +31,6 @@ class _CompareScreenState extends State<CompareScreen> {
     'features': 2,
   };
 
-  // Skor Kata Kunci untuk penilaian spek berbasis teks (Higher is Better)
   final Map<String, Map<String, double>> keywordScoresMap = {
     'platform': {
       'a17 bionic': 20.0,
@@ -65,14 +62,10 @@ class _CompareScreenState extends State<CompareScreen> {
     'features': {'ir blaster': 3.0, 'ultrawideband': 5.0, 'under display': 5.0},
   };
 
-  // Base URL HARUS SAMA dengan yang ada di PHP, tanpa nama file!
   String get baseUrl {
     if (kIsWeb) {
-      // Untuk web, gunakan localhost
       return "http://localhost/api_hp/";
     } else {
-      // Untuk emulator/perangkat fisik, gunakan IP yang sesuai
-      // GANTI IP INI JIKA IP ANDA BERBEDA!
       return "http://192.168.0.2/api_hp/";
     }
   }
@@ -84,7 +77,6 @@ class _CompareScreenState extends State<CompareScreen> {
   }
 
   Future<void> fetchComparisonData() async {
-    // Memanggil get_comparison.php
     final url = Uri.parse("${baseUrl}get_comparison.php");
     final List<Map<String, String>> payload = widget.phonesToCompare.map((p) {
       return {"brand": p["brand"]!, "id": p["id"]!};
@@ -130,12 +122,10 @@ class _CompareScreenState extends State<CompareScreen> {
     }
   }
 
-  // --- LOGIKA PERBANDINGAN NILAI UNGGUL (Dibiarkan Tidak Berubah) ---
   double _parseNumericValue(String? specString, String unit) {
     if (specString == null || specString.isEmpty) return 0.0;
     specString = specString.replaceAll(' ', '').toLowerCase();
 
-    // 1. Parsing Satuan (mAh, GB)
     final unitRegex = RegExp(
       r'(\d+(\.\d+)?)' + unit.toLowerCase(),
       caseSensitive: false,
@@ -145,7 +135,6 @@ class _CompareScreenState extends State<CompareScreen> {
       return double.tryParse(unitMatch.group(1)!.replaceAll(',', '.')) ?? 0.0;
     }
 
-    // 2. Parsing Harga
     if (unit == r'\$') {
       String cleanedPrice = specString.replaceAll(RegExp(r'[^\d,\.]'), '');
       cleanedPrice = cleanedPrice.replaceAll('.', '');
@@ -275,7 +264,6 @@ class _CompareScreenState extends State<CompareScreen> {
 
     return totalScore.clamp(0.0, 100.0);
   }
-  // --- AKHIR LOGIKA PERBANDINGAN NILAI UNGGUL ---
 
   final List<String> specs = [
     "nama_model",
@@ -308,7 +296,6 @@ class _CompareScreenState extends State<CompareScreen> {
     }
   }
 
-  // Widget konten sel perbandingan
   Widget _buildComparisonCell({
     required BuildContext context,
     required String value,
@@ -317,9 +304,8 @@ class _CompareScreenState extends State<CompareScreen> {
     required String comparisonText,
   }) {
     final summaryValue = value.split('\n').take(4).join('\n');
-    final displayValue = comparisonText.isNotEmpty
-        ? comparisonText
-        : summaryValue;
+    final displayValue =
+        comparisonText.isNotEmpty ? comparisonText : summaryValue;
 
     final isDetailText = comparisonText.isEmpty;
 
@@ -334,9 +320,8 @@ class _CompareScreenState extends State<CompareScreen> {
             : null,
       ),
       child: Row(
-        mainAxisAlignment: isDetailText
-            ? MainAxisAlignment.start
-            : MainAxisAlignment.center,
+        mainAxisAlignment:
+            isDetailText ? MainAxisAlignment.start : MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isSuperior)
@@ -364,7 +349,6 @@ class _CompareScreenState extends State<CompareScreen> {
     );
   }
 
-  // Fungsi untuk membangun baris perbandingan
   Widget _buildComparisonRow(String specKey) {
     bool isNumerical =
         specKey == 'battery' || specKey == 'memory' || specKey == 'price';
@@ -418,7 +402,6 @@ class _CompareScreenState extends State<CompareScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Label kiri
               Container(
                 width: 120,
                 padding: const EdgeInsets.only(right: 8),
@@ -430,8 +413,6 @@ class _CompareScreenState extends State<CompareScreen> {
                   ),
                 ),
               ),
-
-              // Kolom data untuk setiap HP
               ...comparisonData.map((phone) {
                 final String specValueString =
                     phone[specKey]?.toString() ?? "-";
@@ -453,7 +434,6 @@ class _CompareScreenState extends State<CompareScreen> {
                           ? (currentValue >= superiorValue)
                           : (currentValue <= superiorValue);
 
-                      // Format teks nilai perbandingan
                       if (specKey == 'price') {
                         comparisonValueText = specValueString;
                       } else if (specKey == 'battery') {
@@ -463,7 +443,8 @@ class _CompareScreenState extends State<CompareScreen> {
                         final allRam = RegExp(r'(\d+)\s*GB\s*RAM')
                             .allMatches(specValueString)
                             .map(
-                              (m) => double.tryParse(m.group(1) ?? '0') ?? 0.0,
+                              (m) =>
+                                  double.tryParse(m.group(1) ?? '0') ?? 0.0,
                             )
                             .toList();
                         final ramValue = allRam.isNotEmpty
@@ -490,7 +471,8 @@ class _CompareScreenState extends State<CompareScreen> {
                       }
                     }
                   } else {
-                    currentValue = _scoreKeywords(specKey, specValueString);
+                    currentValue =
+                        _scoreKeywords(specKey, specValueString);
                     isSuperior =
                         currentValue >= superiorValue && currentValue > 0.0;
                   }
@@ -514,11 +496,9 @@ class _CompareScreenState extends State<CompareScreen> {
     );
   }
 
-  // Widget baru untuk menampilkan skor akhir
   Widget _buildFinalScoreRow() {
-    List<double> finalScores = comparisonData
-        .map(_calculatePhoneScore)
-        .toList();
+    List<double> finalScores =
+        comparisonData.map(_calculatePhoneScore).toList();
     double maxScore = finalScores.isNotEmpty
         ? finalScores.reduce((a, b) => a > b ? a : b)
         : 0.0;
@@ -531,7 +511,6 @@ class _CompareScreenState extends State<CompareScreen> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Label Kiri
               Container(
                 width: 120,
                 padding: const EdgeInsets.only(right: 8),
@@ -544,17 +523,16 @@ class _CompareScreenState extends State<CompareScreen> {
                   ),
                 ),
               ),
-
-              // Kolom Skor
               ...finalScores.asMap().entries.map((entry) {
                 final double score = entry.value;
-                final bool isSuperior = maxScore > 0.0 && score >= maxScore;
+                final bool isSuperior =
+                    maxScore > 0.0 && score >= maxScore;
 
                 Color scoreColor = score >= 80
                     ? Colors.green.shade700
                     : (score >= 60
-                          ? Colors.orange.shade700
-                          : Colors.red.shade700);
+                        ? Colors.orange.shade700
+                        : Colors.red.shade700);
 
                 return Expanded(
                   child: _buildComparisonCell(
@@ -562,8 +540,7 @@ class _CompareScreenState extends State<CompareScreen> {
                     value: score.toStringAsFixed(1),
                     isSuperior: isSuperior,
                     color: scoreColor,
-                    comparisonText:
-                        "${score.toStringAsFixed(1)} / 100", // Tampilan nilai skor
+                    comparisonText: "${score.toStringAsFixed(1)} / 100",
                   ),
                 );
               }).toList(),
@@ -574,14 +551,13 @@ class _CompareScreenState extends State<CompareScreen> {
     );
   }
 
-  // Widget baru untuk bagian header (Gambar dan Nama HP) - Tempat gambar ditampilkan
   Widget _buildHeaderRow() {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(width: 120), // Placeholder untuk label kiri
+          const SizedBox(width: 120),
           ...comparisonData.map((phone) {
             final String imageUrl = phone["image_url"]?.toString() ?? "";
             final String modelName = phone["nama_model"] ?? "N/A";
@@ -589,16 +565,15 @@ class _CompareScreenState extends State<CompareScreen> {
             return Expanded(
               child: Column(
                 children: [
-                  // --- AREA GAMBAR ---
                   Container(
-                    height: 100, // Ukuran gambar
+                    height: 100,
                     margin: const EdgeInsets.only(bottom: 8),
                     child: imageUrl.isNotEmpty
                         ? Image.network(
-                            // MENGGUNAKAN URL LENGKAP DARI PHP
                             imageUrl,
                             fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
+                            errorBuilder:
+                                (context, error, stackTrace) {
                               log(
                                 "Error loading image: $error, URL: $imageUrl",
                               );
@@ -615,7 +590,6 @@ class _CompareScreenState extends State<CompareScreen> {
                             color: Colors.grey,
                           ),
                   ),
-                  // --- NAMA MODEL ---
                   Text(
                     modelName,
                     style: const TextStyle(
@@ -642,44 +616,37 @@ class _CompareScreenState extends State<CompareScreen> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-          ? Center(
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Text(
-                  "❌ GAGAL MEMUAT DATA:\n$errorMessage",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.red,
-                    fontWeight: FontWeight.bold,
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Text(
+                      "❌ GAGAL MEMUAT DATA:\n$errorMessage",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                )
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      _buildHeaderRow(),
+                      ...specs
+                          .where((s) => s != "nama_model")
+                          .map(_buildComparisonRow),
+                      _buildFinalScoreRow(),
+                    ],
                   ),
                 ),
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Header (GAMBAR DAN NAMA HP)
-                  _buildHeaderRow(),
-
-                  // Body table (Semua spek)
-                  ...specs
-                      .where((s) => s != "nama_model")
-                      .map(_buildComparisonRow),
-
-                  // BARIS SKOR AKHIR
-                  _buildFinalScoreRow(),
-                ],
-              ),
-            ),
     );
   }
 }
 
-// Extension ini hanya untuk compatibility, aslinya Anda harus punya import dart:ui
 extension on Color {
   Color get shade900 {
-    // Implementasi dummy shade 900
     return this;
   }
 }

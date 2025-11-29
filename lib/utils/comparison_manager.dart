@@ -16,7 +16,7 @@ class ComparisonManager {
     if (isAlreadySelected) {
       // Hapus berdasarkan ID
       selectedPhones.removeWhere((p) => p['id'] == id);
-    } else if (selectedPhones.length < 3) {
+    } else if (selectedPhones.length < 4) {
       // Tambahkan jika belum mencapai batas 3
       selectedPhones.add(phoneKey);
     }
