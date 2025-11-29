@@ -102,7 +102,7 @@ class _ProductShowcaseState extends State<ProductShowcase> {
                 Flutter3DViewer(
                   // Link Astronaut ini 100% aman untuk Web
                   src:
-                      'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
+                      'https://raw.githubusercontent.com/pizza3/asset/master/iphone.glb',
 
                   controller: _controller,
                   progressBarColor: Colors.orange,

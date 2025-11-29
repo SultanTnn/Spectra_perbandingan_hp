@@ -66,7 +66,7 @@ class _CompareScreenState extends State<CompareScreen> {
     if (kIsWeb) {
       return "http://localhost/api_hp/";
     } else {
-      return "http://192.168.0.2/api_hp/";
+      return "http://192.168.43.60/api_hp/";
     }
   }
 
@@ -304,8 +304,9 @@ class _CompareScreenState extends State<CompareScreen> {
     required String comparisonText,
   }) {
     final summaryValue = value.split('\n').take(4).join('\n');
-    final displayValue =
-        comparisonText.isNotEmpty ? comparisonText : summaryValue;
+    final displayValue = comparisonText.isNotEmpty
+        ? comparisonText
+        : summaryValue;
 
     final isDetailText = comparisonText.isEmpty;
 
@@ -320,8 +321,9 @@ class _CompareScreenState extends State<CompareScreen> {
             : null,
       ),
       child: Row(
-        mainAxisAlignment:
-            isDetailText ? MainAxisAlignment.start : MainAxisAlignment.center,
+        mainAxisAlignment: isDetailText
+            ? MainAxisAlignment.start
+            : MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (isSuperior)
@@ -443,8 +445,7 @@ class _CompareScreenState extends State<CompareScreen> {
                         final allRam = RegExp(r'(\d+)\s*GB\s*RAM')
                             .allMatches(specValueString)
                             .map(
-                              (m) =>
-                                  double.tryParse(m.group(1) ?? '0') ?? 0.0,
+                              (m) => double.tryParse(m.group(1) ?? '0') ?? 0.0,
                             )
                             .toList();
                         final ramValue = allRam.isNotEmpty
@@ -471,8 +472,7 @@ class _CompareScreenState extends State<CompareScreen> {
                       }
                     }
                   } else {
-                    currentValue =
-                        _scoreKeywords(specKey, specValueString);
+                    currentValue = _scoreKeywords(specKey, specValueString);
                     isSuperior =
                         currentValue >= superiorValue && currentValue > 0.0;
                   }
@@ -497,8 +497,9 @@ class _CompareScreenState extends State<CompareScreen> {
   }
 
   Widget _buildFinalScoreRow() {
-    List<double> finalScores =
-        comparisonData.map(_calculatePhoneScore).toList();
+    List<double> finalScores = comparisonData
+        .map(_calculatePhoneScore)
+        .toList();
     double maxScore = finalScores.isNotEmpty
         ? finalScores.reduce((a, b) => a > b ? a : b)
         : 0.0;
@@ -525,14 +526,13 @@ class _CompareScreenState extends State<CompareScreen> {
               ),
               ...finalScores.asMap().entries.map((entry) {
                 final double score = entry.value;
-                final bool isSuperior =
-                    maxScore > 0.0 && score >= maxScore;
+                final bool isSuperior = maxScore > 0.0 && score >= maxScore;
 
                 Color scoreColor = score >= 80
                     ? Colors.green.shade700
                     : (score >= 60
-                        ? Colors.orange.shade700
-                        : Colors.red.shade700);
+                          ? Colors.orange.shade700
+                          : Colors.red.shade700);
 
                 return Expanded(
                   child: _buildComparisonCell(
@@ -572,8 +572,7 @@ class _CompareScreenState extends State<CompareScreen> {
                         ? Image.network(
                             imageUrl,
                             fit: BoxFit.contain,
-                            errorBuilder:
-                                (context, error, stackTrace) {
+                            errorBuilder: (context, error, stackTrace) {
                               log(
                                 "Error loading image: $error, URL: $imageUrl",
                               );
@@ -616,31 +615,31 @@ class _CompareScreenState extends State<CompareScreen> {
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : errorMessage.isNotEmpty
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Text(
-                      "❌ GAGAL MEMUAT DATA:\n$errorMessage",
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                )
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      _buildHeaderRow(),
-                      ...specs
-                          .where((s) => s != "nama_model")
-                          .map(_buildComparisonRow),
-                      _buildFinalScoreRow(),
-                    ],
+          ? Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Text(
+                  "❌ GAGAL MEMUAT DATA:\n$errorMessage",
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+              ),
+            )
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildHeaderRow(),
+                  ...specs
+                      .where((s) => s != "nama_model")
+                      .map(_buildComparisonRow),
+                  _buildFinalScoreRow(),
+                ],
+              ),
+            ),
     );
   }
 }

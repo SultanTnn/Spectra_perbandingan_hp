@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart'; // Pastikan sudah ada di pubspec.yaml
+// import 'package:url_launcher/url_launcher.dart'; // Aktifkan jika ingin link eksternal
+
+// Import halaman-halaman yang sudah dibuat
+import '../pages/about_us_page.dart';
+import '../pages/price_check_page.dart';
+import '../pages/features_info_page.dart';
+import '../pages/help_center_page.dart';
 
 class FooterSection extends StatelessWidget {
   const FooterSection({super.key});
 
-  // Warna background footer (Gelap/Ungu Tua ala referensi)
-  static const Color footerBackground = Color(
-    0xFF1A103C,
-  ); // Sesuaikan jika ingin lebih hitam/ungu
+  static const Color footerBackground = Color(0xFF1A103C);
   static const Color textColor = Colors.white;
   static const Color textGrey = Colors.white60;
 
@@ -16,19 +19,18 @@ class FooterSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: footerBackground, // Latar belakang gelap penuh
+      color: footerBackground,
       padding: const EdgeInsets.only(top: 40, bottom: 20, left: 24, right: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // --- BAGIAN ATAS: LOGO & KOLOM LINK ---
+          // --- BAGIAN ATAS ---
           LayoutBuilder(
             builder: (context, constraints) {
-              // Jika layar lebar (Desktop/Tablet), pakai Row. Jika HP, pakai Column.
               if (constraints.maxWidth > 600) {
-                return _buildDesktopLayout();
+                return _buildDesktopLayout(context);
               } else {
-                return _buildMobileLayout();
+                return _buildMobileLayout(context);
               }
             },
           ),
@@ -37,15 +39,13 @@ class FooterSection extends StatelessWidget {
           const Divider(color: Colors.white24, thickness: 1),
           const SizedBox(height: 20),
 
-          // --- BAGIAN BAWAH: COPYRIGHT & SOCIAL ---
+          // --- BAGIAN BAWAH ---
           Column(
-            // Ubah ke Column agar aman di HP
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Bahasa (Dropdown simulasi)
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -71,22 +71,18 @@ class FooterSection extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // Social Media Icons
                   Row(
                     children: [
-                      _buildSocialIcon(Icons.send), // Icon Telegram/Send
+                      _buildSocialIcon(Icons.send),
                       const SizedBox(width: 12),
-                      _buildSocialIcon(Icons.camera_alt), // Icon IG
+                      _buildSocialIcon(Icons.camera_alt),
                       const SizedBox(width: 12),
-                      _buildSocialIcon(Icons.business), // Icon LinkedIn
+                      _buildSocialIcon(Icons.business),
                     ],
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-
-              // Teks Copyright
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: const [
@@ -109,12 +105,46 @@ class FooterSection extends StatelessWidget {
     );
   }
 
-  // --- LAYOUT UNTUK HP (Mobile) ---
-  Widget _buildMobileLayout() {
+  // --- LOGIKA NAVIGASI ---
+  void _handleNavigation(BuildContext context, String linkName) {
+    Widget? page;
+
+    switch (linkName) {
+      case "Tentang Kami":
+        page = const AboutUsPage();
+        break;
+      case "Cek Harga":
+      case "Review":
+        page = const PriceCheckPage();
+        break;
+      case "Filter Canggih":
+        page = const FeaturesInfoPage();
+        break;
+      case "Pusat Bantuan":
+      case "FAQ":
+        page = const HelpCenterPage();
+        break;
+      case "Komparasi HP":
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Silakan pilih HP di halaman utama untuk membandingkan.",
+            ),
+          ),
+        );
+        return;
+    }
+
+    if (page != null) {
+      Navigator.push(context, MaterialPageRoute(builder: (_) => page!));
+    }
+  }
+
+  // --- LAYOUT WIDGETS ---
+  Widget _buildMobileLayout(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Logo & Tagline
         Row(
           children: [
             const Icon(Icons.smartphone_rounded, color: Colors.white, size: 32),
@@ -136,29 +166,33 @@ class FooterSection extends StatelessWidget {
           style: TextStyle(color: textGrey, fontSize: 13, height: 1.5),
         ),
         const SizedBox(height: 30),
-
-        // Link Sections (Grid 2 Kolom)
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 2,
-          childAspectRatio: 2.5, // Mengatur tinggi baris
+          childAspectRatio: 2.5,
           children: [
-            _buildFooterLinkColumn("Tentang", ["Tentang Kami", "Blog"]),
-            _buildFooterLinkColumn("Produk", ["Komparasi HP", "Cek Harga"]),
-            _buildFooterLinkColumn("Fitur", ["Filter Canggih", "Mode Gelap"]),
-            _buildFooterLinkColumn("Lainnya", [
-              "Pusat Bantuan",
-              "Hubungi Kami",
+            // Revisi: Blog dihapus
+            _buildFooterLinkColumn(context, "Tentang", ["Tentang Kami"]),
+
+            // Produk tetap sama
+            _buildFooterLinkColumn(context, "Produk", [
+              "Komparasi HP",
+              "Cek Harga",
             ]),
+
+            // Revisi: Mode Gelap dihapus
+            _buildFooterLinkColumn(context, "Fitur", ["Filter Canggih"]),
+
+            // Revisi: Hubungi Kami dihapus
+            _buildFooterLinkColumn(context, "Lainnya", ["Pusat Bantuan"]),
           ],
         ),
       ],
     );
   }
 
-  // --- LAYOUT UNTUK DESKTOP/TABLET (Opsional jika di-resize) ---
-  Widget _buildDesktopLayout() {
+  Widget _buildDesktopLayout(BuildContext context) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -193,18 +227,28 @@ class FooterSection extends StatelessWidget {
             ],
           ),
         ),
+        // Revisi Desktop: Link disesuaikan (menghapus Blog, dll)
         Expanded(
-          child: _buildFooterLinkColumn("Tentang", ["Tentang Kami", "Blog"]),
+          child: _buildFooterLinkColumn(context, "Tentang", ["Tentang Kami"]),
         ),
         Expanded(
-          child: _buildFooterLinkColumn("Produk", ["Komparasi", "Review"]),
+          child: _buildFooterLinkColumn(context, "Produk", [
+            "Komparasi HP",
+            "Cek Harga",
+          ]),
         ),
-        Expanded(child: _buildFooterLinkColumn("Bantuan", ["FAQ", "Kontak"])),
+        Expanded(
+          child: _buildFooterLinkColumn(context, "Bantuan", ["Pusat Bantuan"]),
+        ),
       ],
     );
   }
 
-  Widget _buildFooterLinkColumn(String title, List<String> links) {
+  Widget _buildFooterLinkColumn(
+    BuildContext context,
+    String title,
+    List<String> links,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -221,7 +265,7 @@ class FooterSection extends StatelessWidget {
           (link) => Padding(
             padding: const EdgeInsets.only(bottom: 8.0),
             child: InkWell(
-              onTap: () {}, // Aksi kosong untuk demo
+              onTap: () => _handleNavigation(context, link),
               child: Text(
                 link,
                 style: const TextStyle(color: textGrey, fontSize: 13),

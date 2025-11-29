@@ -6,7 +6,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart'; // Pastikan sudah ada di pubspec.yaml
+import 'package:url_launcher/url_launcher.dart';
+
+// Import halaman-halaman
+import '../pages/team_dev_page.dart'; // Import halaman tim yang baru dibuat
+import '../pages/about_us_page.dart'; // Opsional jika tombol tentang ingin diaktifkan
 
 // Import file lokal
 import '../../service/api_service.dart';
@@ -160,7 +164,7 @@ class _WelcomePageState extends State<WelcomePage> {
     }
   }
 
-  // --- FUNGSI PEMBELIAN LANGSUNG (NEW) ---
+  // --- FUNGSI PEMBELIAN LANGSUNG ---
   Future<void> _launchMarketplace(String? url, String storeName) async {
     if (url == null || url.isEmpty) {
       ScaffoldMessenger.of(
@@ -306,7 +310,7 @@ class _WelcomePageState extends State<WelcomePage> {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // MENU MERK
+                    // --- MENU MERK ---
                     Theme(
                       data: Theme.of(context).copyWith(
                         splashColor: Colors.transparent,
@@ -370,22 +374,60 @@ class _WelcomePageState extends State<WelcomePage> {
 
                     const SizedBox(width: 6),
 
-                    _buildTooltipMenuButton(
-                      "Tim Dev",
-                      Icons.group_rounded,
-                      "Kelompok 3",
-                      glassColor,
-                      borderColor,
+                    // --- TOMBOL TIM DEV (DIPERBAIKI) ---
+                    // Menggunakan Material + InkWell agar bisa diklik dan ada efek riak
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TeamDevPage(),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        splashColor: Colors.white.withOpacity(0.3),
+                        highlightColor: Colors.white.withOpacity(0.1),
+                        child: _buildGlassMenuButton(
+                          label: "Tim Dev",
+                          icon: Icons.group_rounded,
+                          isDropdown: false,
+                          glassColor: glassColor,
+                          borderColor: borderColor,
+                        ),
+                      ),
                     ),
 
+                    // ------------------------------------
                     const SizedBox(width: 6),
 
-                    _buildTooltipMenuButton(
-                      "Tentang",
-                      Icons.info_outline_rounded,
-                      "© 2025 Spectra",
-                      glassColor,
-                      borderColor,
+                    // --- TOMBOL TENTANG ---
+                    // Dibungkus juga agar konsisten, mengarah ke AboutUsPage (jika ada)
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        onTap: () {
+                          // Jika file about_us_page.dart sudah ada:
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AboutUsPage(),
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(20),
+                        splashColor: Colors.white.withOpacity(0.3),
+                        highlightColor: Colors.white.withOpacity(0.1),
+                        child: _buildGlassMenuButton(
+                          label: "Tentang",
+                          icon: Icons.info_outline_rounded,
+                          isDropdown: false,
+                          glassColor: glassColor,
+                          borderColor: borderColor,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -525,9 +567,9 @@ class _WelcomePageState extends State<WelcomePage> {
                               displayStringForOption: (opt) => opt.label,
                               onSelected: (selection) {
                                 FocusManager.instance.primaryFocus?.unfocus();
-                                if (selection.type == 'brand')
+                                if (selection.type == 'brand') {
                                   _fetchPhonesFromAPI(selection.data as String);
-                                else {
+                                } else {
                                   setState(() {
                                     _selectedBrandName =
                                         (selection.data as Smartphone).brand;
@@ -602,7 +644,7 @@ class _WelcomePageState extends State<WelcomePage> {
                       ),
                       child: Column(
                         children: [
-                          // 1. BODY KONTEN (Hasil Pencarian / Perbandingan)
+                          // 1. BODY KONTEN
                           Container(
                             constraints: BoxConstraints(
                               minHeight: screenHeight * 0.6,
@@ -613,7 +655,7 @@ class _WelcomePageState extends State<WelcomePage> {
                             child: _buildBodyContent(),
                           ),
 
-                          // 2. FITUR 3D SHOWCASE (iPhone 17 Pro Max)
+                          // 2. FITUR 3D SHOWCASE
                           Container(
                             color: _isDarkMode
                                 ? const Color(0xFF1E1E2C)
@@ -621,7 +663,7 @@ class _WelcomePageState extends State<WelcomePage> {
                             child: ProductShowcase(isDarkMode: _isDarkMode),
                           ),
 
-                          // 3. FOOTER GELAP (Biteship Style)
+                          // 3. FOOTER
                           const FooterSection(),
                         ],
                       ),
@@ -639,24 +681,6 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   // ... WIDGET HELPER ...
-  Widget _buildTooltipMenuButton(
-    String label,
-    IconData icon,
-    String msg,
-    Color glass,
-    Color border,
-  ) {
-    return Tooltip(
-      message: msg,
-      child: _buildGlassMenuButton(
-        label: label,
-        icon: icon,
-        isDropdown: false,
-        glassColor: glass,
-        borderColor: border,
-      ),
-    );
-  }
 
   Widget _buildGlassMenuButton({
     required String label,
@@ -699,7 +723,7 @@ class _WelcomePageState extends State<WelcomePage> {
   }
 
   Widget? _buildFloatingActionButton() {
-    if (_tampilkanHasilPerbandingan)
+    if (_tampilkanHasilPerbandingan) {
       return FloatingActionButton.extended(
         onPressed: () => setState(() {
           _tampilkanHasilPerbandingan = false;
@@ -712,30 +736,34 @@ class _WelcomePageState extends State<WelcomePage> {
         icon: const Icon(Icons.refresh),
         backgroundColor: Colors.redAccent,
       );
-    if (_listUntukDibandingkan.isNotEmpty)
+    }
+    if (_listUntukDibandingkan.isNotEmpty) {
       return FloatingActionButton.extended(
         onPressed: () => setState(() => _tampilkanHasilPerbandingan = true),
         label: Text('Bandingkan (${_listUntukDibandingkan.length})'),
         icon: const Icon(Icons.compare_arrows),
         backgroundColor: const Color(0xFF6C63FF),
       );
+    }
     return null;
   }
 
   Widget _buildBodyContent() {
-    if (_errorMessage != null)
+    if (_errorMessage != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Text(_errorMessage!),
         ),
       );
+    }
     if (_tampilkanHasilPerbandingan) return _buildPerbandinganFinal();
-    if (_isPhoneLoading)
+    if (_isPhoneLoading) {
       return const Padding(
         padding: EdgeInsets.all(50),
         child: CircularProgressIndicator(),
       );
+    }
     if (_phoneList.isNotEmpty) return _buildHasilPencarian();
     return Padding(
       padding: const EdgeInsets.all(50),
@@ -788,7 +816,7 @@ class _WelcomePageState extends State<WelcomePage> {
   Widget _buildKolomPerbandingan(Smartphone phone) {
     return Container(
       width: 240,
-      height: 600, // Fixed Height
+      height: 600,
       margin: const EdgeInsets.only(right: 16, bottom: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -815,8 +843,6 @@ class _WelcomePageState extends State<WelcomePage> {
                   ? Image.network(phone.imageUrl, fit: BoxFit.contain)
                   : const Icon(Icons.phone_android, size: 50),
             ),
-
-            // --- TOMBOL BELI LANGSUNG (Menggantikan Keranjang) ---
             SizedBox(
               height: 35,
               child: ElevatedButton.icon(
@@ -835,8 +861,6 @@ class _WelcomePageState extends State<WelcomePage> {
               ),
             ),
             const SizedBox(height: 10),
-
-            // ----------------------------------------------------
             const SizedBox(height: 15),
             Text(
               phone.namaModel,

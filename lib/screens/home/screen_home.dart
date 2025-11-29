@@ -9,7 +9,7 @@ import '../auth/login_screen.dart';
 import '../../utils/session.dart';
 import '../profile_screen.dart';
 import '../../screens/home/settings/app_language.dart';
-import '../home/settings/settings_screen.dart'; 
+import '../home/settings/settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -35,9 +35,9 @@ class _HomeScreenState extends State<HomeScreen>
   int _currentHintIndex = 0;
   Timer? _hintTimer;
   bool _isDarkModeActive = false;
-  
+
   // --- BARU DITAMBAH: State untuk Sorting ---
-  String _currentSortBy = 'alphabetical'; 
+  String _currentSortBy = 'alphabetical';
 
   // --- KONSTANTA WARNA DINAMIS BERDASARKAN TEMA ---
   Color _getPrimaryColor() =>
@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen>
   Color _getShimmerHighlightColor() =>
       _isDarkModeActive ? Colors.grey.shade700 : Colors.grey.shade100;
 
-  static const String BASE_URL = 'http://192.168.0.2/api_hp';
+  static const String BASE_URL = 'http://192.168.43.60/api_hp';
 
   // Animasi Background Gradient
   late AnimationController _animationController;
@@ -121,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen>
     _loadSettings().then((_) {
       _loadSessionData();
       // DIPERBAIKI: Panggil fetchBrands dengan sorting saat ini
-      fetchBrands(sortBy: _currentSortBy); 
+      fetchBrands(sortBy: _currentSortBy);
       _startGradientAnimation();
     });
 
@@ -320,13 +320,13 @@ class _HomeScreenState extends State<HomeScreen>
     // DIPERBAIKI: Gunakan SettingsScreen dan ambil return value (true jika ada perubahan)
     final result = await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => const SettingsPage()), 
+      MaterialPageRoute(builder: (_) => const SettingsPage()),
     );
 
     if (result == true) {
       await _loadSettings();
       // Panggil fetchBrands dengan sorting saat ini agar data dimuat ulang dengan bahasa baru
-      fetchBrands(sortBy: _currentSortBy); 
+      fetchBrands(sortBy: _currentSortBy);
       setState(() {});
     }
   }
@@ -399,7 +399,7 @@ class _HomeScreenState extends State<HomeScreen>
   // DIPERBAIKI: Menerima parameter sorting
   Future<void> fetchBrands({String sortBy = 'alphabetical'}) async {
     // BARU: Tambahkan parameter sort ke URL
-    final url = Uri.parse('$BASE_URL/get_brands.php?sort=$sortBy'); 
+    final url = Uri.parse('$BASE_URL/get_brands.php?sort=$sortBy');
     try {
       final resp = await http.get(url).timeout(const Duration(seconds: 10));
 
@@ -411,9 +411,9 @@ class _HomeScreenState extends State<HomeScreen>
 
           // Lakukan sorting A-Z di Flutter HANYA jika mode 'alphabetical'
           if (sortBy == 'alphabetical') {
-             brands.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+            brands.sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
           }
-          
+
           loading = false;
           errorMessage = '';
         });
@@ -462,16 +462,36 @@ class _HomeScreenState extends State<HomeScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               // Opsi 1: Alphabetical (A-Z)
-              _buildSortOption(context, 'alphabetical', _getTranslatedText('semua_merk_az'), Icons.sort_by_alpha),
-              
+              _buildSortOption(
+                context,
+                'alphabetical',
+                _getTranslatedText('semua_merk_az'),
+                Icons.sort_by_alpha,
+              ),
+
               // Opsi 2: Harga Tertinggi
-              _buildSortOption(context, 'highest_price', _getTranslatedText('harga_tertinggi'), Icons.trending_up),
-              
+              _buildSortOption(
+                context,
+                'highest_price',
+                _getTranslatedText('harga_tertinggi'),
+                Icons.trending_up,
+              ),
+
               // Opsi 3: Harga Terendah
-              _buildSortOption(context, 'lowest_price', _getTranslatedText('harga_terendah'), Icons.trending_down),
-              
+              _buildSortOption(
+                context,
+                'lowest_price',
+                _getTranslatedText('harga_terendah'),
+                Icons.trending_down,
+              ),
+
               // Opsi 4: Rekomendasi Terbaik
-              _buildSortOption(context, 'best_recommendation', _getTranslatedText('rekomendasi_terbaik'), Icons.star),
+              _buildSortOption(
+                context,
+                'best_recommendation',
+                _getTranslatedText('rekomendasi_terbaik'),
+                Icons.star,
+              ),
             ],
           ),
         );
@@ -480,13 +500,20 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildSortOption(
-      BuildContext context, String value, String title, IconData icon) {
+    BuildContext context,
+    String value,
+    String title,
+    IconData icon,
+  ) {
     final bool isSelected = _currentSortBy == value;
     final Color dynamicPrimary = _getPrimaryColor();
     final Color dynamicTextColor = _getBrandTextColor();
 
     return ListTile(
-      leading: Icon(icon, color: isSelected ? dynamicPrimary : dynamicTextColor.withOpacity(0.7)),
+      leading: Icon(
+        icon,
+        color: isSelected ? dynamicPrimary : dynamicTextColor.withOpacity(0.7),
+      ),
       title: Text(
         title,
         style: TextStyle(
@@ -502,7 +529,7 @@ class _HomeScreenState extends State<HomeScreen>
             loading = true; // Aktifkan loading/shimmer
           });
           // Panggil API dengan sorting baru
-          fetchBrands(sortBy: value); 
+          fetchBrands(sortBy: value);
         }
         Navigator.pop(context);
       },
@@ -512,7 +539,7 @@ class _HomeScreenState extends State<HomeScreen>
   Widget _buildSortBar() {
     final Color dynamicPrimary = _getPrimaryColor();
     final Color dynamicTextColor = _getBrandTextColor();
-    
+
     // Tentukan teks yang akan ditampilkan
     String getCurrentSortTitle() {
       switch (_currentSortBy) {
@@ -615,9 +642,10 @@ class _HomeScreenState extends State<HomeScreen>
 
     Widget contentList;
     final trimmedQuery = query.trim();
-    
+
     // Tentukan apakah Sort Bar dan Konten List utama tampil
-    final bool showBrandListContent = trimmedQuery.isEmpty && !loading && errorMessage.isEmpty;
+    final bool showBrandListContent =
+        trimmedQuery.isEmpty && !loading && errorMessage.isEmpty;
 
     if (loading) {
       contentList = widgets.buildLoadingShimmer(
@@ -632,7 +660,9 @@ class _HomeScreenState extends State<HomeScreen>
             loading = true;
             errorMessage = '';
           });
-          fetchBrands(sortBy: _currentSortBy); // Panggil ulang dengan sort state saat ini
+          fetchBrands(
+            sortBy: _currentSortBy,
+          ); // Panggil ulang dengan sort state saat ini
         },
       );
     } else if (trimmedQuery.isNotEmpty) {
@@ -704,7 +734,7 @@ class _HomeScreenState extends State<HomeScreen>
         ],
       );
     }
-    
+
     // Tentukan header content yang akan ditampilkan di bagian bawah area gradient
     final headerContent = [
       // 1. Header (Area Gradient)
@@ -750,20 +780,15 @@ class _HomeScreenState extends State<HomeScreen>
             const SizedBox(height: 30),
             widgets.buildSearchAndCompareBar(),
             const SizedBox(height: 20),
-            Icon(
-              Icons.keyboard_arrow_down,
-              color: _getTextColor(),
-              size: 30,
-            ),
+            Icon(Icons.keyboard_arrow_down, color: _getTextColor(), size: 30),
           ],
         ),
       ),
-      
+
       // 2. Sorting Bar (Disisipkan di antara Header dan Konten Utama)
-      if (showBrandListContent)
-        _buildSortBar(),
+      if (showBrandListContent) _buildSortBar(),
     ];
-    
+
     // Konten utama list (brand list / search results)
     final mainContent = Container(
       decoration: BoxDecoration(
@@ -780,10 +805,7 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         ],
       ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 20,
-        vertical: 20,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: contentList,
     );
 
@@ -955,14 +977,10 @@ class _HomeScreenState extends State<HomeScreen>
             child: CustomScrollView(
               slivers: [
                 // 1. Header dan Sort Bar
-                SliverList(
-                  delegate: SliverChildListDelegate(headerContent),
-                ),
-                
+                SliverList(delegate: SliverChildListDelegate(headerContent)),
+
                 // 2. Konten Utama (Daftar Merek/Hasil Pencarian)
-                SliverToBoxAdapter(
-                  child: mainContent,
-                ),
+                SliverToBoxAdapter(child: mainContent),
               ],
             ),
           ),
