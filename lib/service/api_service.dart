@@ -7,7 +7,8 @@ import 'dart:io' show Platform;
 class ApiService {
 
   // IP PC Anda (Host)
-  static const String _localHostIp = "http://192.168.1.6";
+  // IP PC Anda (Host) atau Domain cPanel
+  static const String _localHostIp = "https://be-nopal.batakscript.id";
 
   static const String _apiFolder = "/api_hp/";
 
