@@ -15,9 +15,9 @@ class Smartphone {
   final String price;
   final String brand;
   final String imageUrl;
-  final String? purchaseUrl; 
-  final String? shopeeUrl; 
-  final String? tokopediaUrl; 
+  final String? purchaseUrl;
+  final String? shopeeUrl;
+  final String? tokopediaUrl;
 
   Smartphone({
     required this.id,

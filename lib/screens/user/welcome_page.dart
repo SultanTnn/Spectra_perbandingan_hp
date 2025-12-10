@@ -1,4 +1,4 @@
-// lib/screens/user/welcome_page.dart
+// FILE: lib/screens/user/welcome_page.dart
 
 import 'package:flutter/material.dart';
 import 'dart:developer';
@@ -8,18 +8,18 @@ import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-// Import halaman-halaman
-import '../pages/team_dev_page.dart'; // Import halaman tim yang baru dibuat
-import '../pages/about_us_page.dart'; // Opsional jika tombol tentang ingin diaktifkan
-
-// Import file lokal
+// --- IMPORT ---
+import '../pages/team_dev_page.dart';
+import '../pages/about_us_page.dart';
 import '../../service/api_service.dart';
 import '../../models/smartphone.dart';
 import '../auth/login_screen.dart';
 import '../auth/register_screen.dart';
 import '../../utils/session.dart';
-import 'footer_section.dart'; // File Footer Gelap
-import 'product_showcase.dart'; // File 3D iPhone
+import '../../utils/unauth_limit.dart';
+import '../comparison/compare_screen.dart'; // IMPORT COMPARE SCREEN
+import 'footer_section.dart';
+import 'product_showcase.dart';
 
 class SearchOption {
   final String label;
@@ -45,15 +45,12 @@ class _WelcomePageState extends State<WelcomePage> {
   // State Data
   List<String> _brandList = [];
   List<SearchOption> _searchOptions = [];
-  String? _selectedBrandName;
   List<Smartphone> _phoneList = [];
   final List<Smartphone> _listUntukDibandingkan = [];
 
   // State UI
   bool _tampilkanHasilPerbandingan = false;
-  bool _isBrandLoading = false;
   bool _isPhoneLoading = false;
-  bool _isSearchIndexReady = false;
   String? _errorMessage;
   bool _isDarkMode = false;
 
@@ -73,7 +70,6 @@ class _WelcomePageState extends State<WelcomePage> {
   // --- FUNGSI API ---
   Future<void> _fetchBrandsFromAPI() async {
     setState(() {
-      _isBrandLoading = true;
       _errorMessage = null;
     });
     try {
@@ -104,8 +100,6 @@ class _WelcomePageState extends State<WelcomePage> {
       if (mounted) {
         setState(() => _errorMessage = "Gagal Koneksi Server");
       }
-    } finally {
-      if (mounted) setState(() => _isBrandLoading = false);
     }
   }
 
@@ -126,7 +120,6 @@ class _WelcomePageState extends State<WelcomePage> {
       if (mounted) {
         setState(() {
           _searchOptions = newOptions;
-          _isSearchIndexReady = true;
         });
       }
     } catch (e) {
@@ -137,7 +130,6 @@ class _WelcomePageState extends State<WelcomePage> {
   Future<void> _fetchPhonesFromAPI(String brand) async {
     setState(() {
       _isPhoneLoading = true;
-      _selectedBrandName = brand;
       _phoneList = [];
       _tampilkanHasilPerbandingan = false;
       _errorMessage = null;
@@ -251,11 +243,11 @@ class _WelcomePageState extends State<WelcomePage> {
   Widget build(BuildContext context) {
     final textTheme = GoogleFonts.nunitoTextTheme(Theme.of(context).textTheme);
     final glassColor = _isDarkMode
-        ? Colors.black.withOpacity(0.4)
-        : Colors.white.withOpacity(0.2);
+        ? Colors.black.withValues(alpha: 0.4)
+        : Colors.white.withValues(alpha: 0.2);
     final borderColor = _isDarkMode
-        ? Colors.white.withOpacity(0.1)
-        : Colors.white.withOpacity(0.3);
+        ? Colors.white.withValues(alpha: 0.1)
+        : Colors.white.withValues(alpha: 0.3);
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Theme(
@@ -332,7 +324,6 @@ class _WelcomePageState extends State<WelcomePage> {
                         ),
                         onSelected: (String brand) {
                           setState(() {
-                            _selectedBrandName = brand;
                             _phoneList = [];
                             _listUntukDibandingkan.clear();
                             _tampilkanHasilPerbandingan = false;
@@ -374,8 +365,7 @@ class _WelcomePageState extends State<WelcomePage> {
 
                     const SizedBox(width: 6),
 
-                    // --- TOMBOL TIM DEV (DIPERBAIKI) ---
-                    // Menggunakan Material + InkWell agar bisa diklik dan ada efek riak
+                    // --- TOMBOL TIM DEV ---
                     Material(
                       color: Colors.transparent,
                       child: InkWell(
@@ -388,8 +378,8 @@ class _WelcomePageState extends State<WelcomePage> {
                           );
                         },
                         borderRadius: BorderRadius.circular(20),
-                        splashColor: Colors.white.withOpacity(0.3),
-                        highlightColor: Colors.white.withOpacity(0.1),
+                        splashColor: Colors.white.withValues(alpha: 0.3),
+                        highlightColor: Colors.white.withValues(alpha: 0.1),
                         child: _buildGlassMenuButton(
                           label: "Tim Dev",
                           icon: Icons.group_rounded,
@@ -400,16 +390,13 @@ class _WelcomePageState extends State<WelcomePage> {
                       ),
                     ),
 
-                    // ------------------------------------
                     const SizedBox(width: 6),
 
                     // --- TOMBOL TENTANG ---
-                    // Dibungkus juga agar konsisten, mengarah ke AboutUsPage (jika ada)
                     Material(
                       color: Colors.transparent,
                       child: InkWell(
                         onTap: () {
-                          // Jika file about_us_page.dart sudah ada:
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -418,8 +405,8 @@ class _WelcomePageState extends State<WelcomePage> {
                           );
                         },
                         borderRadius: BorderRadius.circular(20),
-                        splashColor: Colors.white.withOpacity(0.3),
-                        highlightColor: Colors.white.withOpacity(0.1),
+                        splashColor: Colors.white.withValues(alpha: 0.3),
+                        highlightColor: Colors.white.withValues(alpha: 0.1),
                         child: _buildGlassMenuButton(
                           label: "Tentang",
                           icon: Icons.info_outline_rounded,
@@ -521,10 +508,12 @@ class _WelcomePageState extends State<WelcomePage> {
                     ),
                     decoration: BoxDecoration(
                       color: _isDarkMode
-                          ? Colors.black.withOpacity(0.3)
-                          : Colors.white.withOpacity(0.2),
+                          ? Colors.black.withValues(alpha: 0.3)
+                          : Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(30),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2),
+                      ),
                     ),
                     child: Column(
                       children: [
@@ -547,7 +536,7 @@ class _WelcomePageState extends State<WelcomePage> {
                           'Bandingkan spesifikasi ribuan handphone dengan mudah.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 13,
                           ),
                         ),
@@ -571,8 +560,6 @@ class _WelcomePageState extends State<WelcomePage> {
                                   _fetchPhonesFromAPI(selection.data as String);
                                 } else {
                                   setState(() {
-                                    _selectedBrandName =
-                                        (selection.data as Smartphone).brand;
                                     _phoneList = [selection.data as Smartphone];
                                     _listUntukDibandingkan.clear();
                                     _tampilkanHasilPerbandingan = false;
@@ -722,6 +709,7 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
+  // --- LOGIKA UTAMA TOMBOL BANDINGKAN DENGAN LIMIT & NAVIGASI ---
   Widget? _buildFloatingActionButton() {
     if (_tampilkanHasilPerbandingan) {
       return FloatingActionButton.extended(
@@ -729,7 +717,6 @@ class _WelcomePageState extends State<WelcomePage> {
           _tampilkanHasilPerbandingan = false;
           _listUntukDibandingkan.clear();
           _phoneList.clear();
-          _selectedBrandName = null;
           _fetchBrandsFromAPI();
         }),
         label: const Text("Reset"),
@@ -737,9 +724,61 @@ class _WelcomePageState extends State<WelcomePage> {
         backgroundColor: Colors.redAccent,
       );
     }
+
+    // Tombol Bandingkan Aktif
     if (_listUntukDibandingkan.isNotEmpty) {
       return FloatingActionButton.extended(
-        onPressed: () => setState(() => _tampilkanHasilPerbandingan = true),
+        onPressed: () {
+          // 1. Jika User Sudah Login -> Pindah ke CompareScreen (Tampilan Bagus + Beli Aktif)
+          if (UserSession.isLoggedIn) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    CompareScreen(phones: _listUntukDibandingkan),
+              ),
+            );
+            return;
+          }
+
+          // 2. Jika Tamu, Cek Limit (Maks 2x) & Tampil di Halaman Ini Saja
+          if (UnauthComparisonLimit.checkAndIncrement()) {
+            setState(() => _tampilkanHasilPerbandingan = true);
+          } else {
+            // 3. Jika Limit Habis, Tampilkan Dialog
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: const Text("Batas Akses Tamu Habis"),
+                  content: const Text(
+                    "Anda telah mencapai batas maksimal 2x perbandingan sebagai tamu. "
+                    "Silakan login atau daftar untuk menikmati fitur tanpa batas.",
+                  ),
+                  actions: [
+                    TextButton(
+                      child: const Text("Batal"),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    ElevatedButton(
+                      child: const Text("Login Sekarang"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                );
+              },
+            );
+          }
+        },
         label: Text('Bandingkan (${_listUntukDibandingkan.length})'),
         icon: const Icon(Icons.compare_arrows),
         backgroundColor: const Color(0xFF6C63FF),
@@ -846,14 +885,43 @@ class _WelcomePageState extends State<WelcomePage> {
             SizedBox(
               height: 35,
               child: ElevatedButton.icon(
-                onPressed: () => _showStoreOptions(phone),
-                icon: const Icon(Icons.shopping_cart, size: 14),
+                // --- LOGIKA TOMBOL BELI TERKUNCI (MODE TAMU) ---
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text("Akses Terbatas"),
+                      content: const Text(
+                        "Silakan Login terlebih dahulu untuk mengakses link pembelian resmi.",
+                      ),
+                      actions: [
+                        TextButton(
+                          child: const Text("Batal"),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        ElevatedButton(
+                          child: const Text("Login Sekarang"),
+                          onPressed: () {
+                            Navigator.pop(context);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.lock, size: 14), // Ikon Gembok
                 label: const Text(
-                  "Beli Sekarang",
+                  "Login untuk Beli",
                   style: TextStyle(fontSize: 11),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6C63FF),
+                  backgroundColor: Colors.grey, // Warna Abu-abu
                   foregroundColor: Colors.white,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -873,17 +941,17 @@ class _WelcomePageState extends State<WelcomePage> {
             _buildSpecPill("Harga", phone.price, Colors.green),
             _buildSpecPill(
               "Layar",
-              _parseSpec(phone.display, "Type:"),
+              _parseSpec(phone.display, "Type:") ?? "N/A",
               Colors.blue,
             ),
             _buildSpecPill(
               "Chipset",
-              _parseSpec(phone.platform, "Chipset:"),
+              _parseSpec(phone.platform, "Chipset:") ?? "N/A",
               Colors.orange,
             ),
             _buildSpecPill(
               "Memori",
-              _parseSpec(phone.memory, "Internal:"),
+              _parseSpec(phone.memory, "Internal:") ?? "N/A",
               Colors.purple,
             ),
             _buildSpecPill(
@@ -893,7 +961,7 @@ class _WelcomePageState extends State<WelcomePage> {
             ),
             _buildSpecPill(
               "Baterai",
-              _parseSpec(phone.battery, "Type:"),
+              _parseSpec(phone.battery, "Type:") ?? "N/A",
               Colors.teal,
             ),
           ],
@@ -1004,7 +1072,7 @@ class _WelcomePageState extends State<WelcomePage> {
       padding: const EdgeInsets.all(12),
       width: double.infinity,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Column(
@@ -1034,18 +1102,18 @@ class _WelcomePageState extends State<WelcomePage> {
     );
   }
 
-  String _parseSpec(String? specString, String key) {
-    if (specString == null || specString.isEmpty) return "N/A";
+  String? _parseSpec(String? specString, String key) {
+    if (specString == null || specString.isEmpty) return null;
     try {
       var lines = specString.split('\n');
       var line = lines.firstWhere(
         (l) => l.trim().startsWith(key),
         orElse: () => "N/A",
       );
-      if (line == "N/A") return "N/A";
+      if (line == "N/A") return null;
       return line.substring(key.length).trim();
     } catch (e) {
-      return "N/A";
+      return null;
     }
   }
 }

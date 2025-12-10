@@ -1,3 +1,5 @@
+// FILE: lib/screens/home/home_widgets.dart
+
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -131,7 +133,8 @@ class HomeWidgets {
                   borderRadius: BorderRadius.circular(15),
                 ),
                 elevation: 6,
-                shadowColor: dynamicPrimary.withOpacity(0.4),
+                // Ganti withOpacity -> withValues
+                shadowColor: dynamicPrimary.withValues(alpha: 0.4),
               ),
               onPressed: onTryAgain,
               icon: const Icon(Icons.refresh),
@@ -157,7 +160,8 @@ class HomeWidgets {
         borderRadius: BorderRadius.circular(40),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            // Ganti withOpacity -> withValues
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
@@ -212,12 +216,11 @@ class HomeWidgets {
                     ),
                   );
                 } else {
-                  // FIX: Menambahkan phonesToCompare: []
+                  // PERBAIKAN UTAMA: Hapus 'phonesToCompare: []'
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          BrandScreen(brand: query, phonesToCompare: []),
+                      builder: (_) => BrandScreen(brand: query),
                     ),
                   );
                 }
@@ -253,7 +256,8 @@ class HomeWidgets {
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            // Ganti withOpacity -> withValues
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, 8),
           ),
@@ -281,11 +285,13 @@ class HomeWidgets {
                   width: 56,
                   height: 56,
                   decoration: BoxDecoration(
-                    color: dynamicPrimary.withOpacity(0.12),
+                    // Ganti withOpacity -> withValues
+                    color: dynamicPrimary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: dynamicPrimary.withOpacity(0.08),
+                        // Ganti withOpacity -> withValues
+                        color: dynamicPrimary.withValues(alpha: 0.08),
                         blurRadius: 8,
                         offset: const Offset(0, 3),
                       ),
@@ -349,7 +355,8 @@ class HomeWidgets {
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            // Ganti withOpacity -> withValues
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -358,12 +365,10 @@ class HomeWidgets {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          // FIX: Menambahkan phonesToCompare: []
+          // PERBAIKAN UTAMA: Hapus 'phonesToCompare: []'
           onTap: () => Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (_) => BrandScreen(brand: brand, phonesToCompare: []),
-            ),
+            MaterialPageRoute(builder: (_) => BrandScreen(brand: brand)),
           ),
           borderRadius: BorderRadius.circular(20),
           child: Padding(
@@ -374,7 +379,8 @@ class HomeWidgets {
                   width: 55,
                   height: 55,
                   decoration: BoxDecoration(
-                    color: dynamicPrimary.withOpacity(0.1),
+                    // Ganti withOpacity -> withValues
+                    color: dynamicPrimary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(15),
                   ),
                   child: Center(
@@ -483,7 +489,8 @@ class HomeWidgets {
         ),
       ),
       onTap: onTap,
-      splashColor: dynamicPrimary.withOpacity(0.1),
+      // Ganti withOpacity -> withValues
+      splashColor: dynamicPrimary.withValues(alpha: 0.1),
     );
   }
 }

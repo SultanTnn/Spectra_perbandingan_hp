@@ -61,7 +61,7 @@ class _HomeScreenState extends State<HomeScreen>
   Color _getShimmerHighlightColor() =>
       _isDarkModeActive ? Colors.grey.shade700 : Colors.grey.shade100;
 
-  static const String BASE_URL = 'http://192.168.1.6/api_hp';
+  static const String BASE_URL = 'http://192.168.43.60/api_hp';
 
   // Animasi Background Gradient
   late AnimationController _animationController;

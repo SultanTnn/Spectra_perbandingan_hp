@@ -1,20 +1,19 @@
+// FILE: lib/screens/comparison/brand_screen.dart
+
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../../models/smartphone.dart';
 import '../../utils/comparison_manager.dart';
 import '../../screens/comparison/compare_screen.dart';
 import '../../screens/crud/detail_screen.dart';
 import '../../screens/crud/create_phone_screen.dart';
 import '../../utils/session.dart';
+import '../../service/api_service.dart';
 
 class BrandScreen extends StatefulWidget {
   final String brand;
-  const BrandScreen({
-    super.key,
-    required this.brand,
-    required List phonesToCompare,
-  });
+  const BrandScreen({super.key, required this.brand}); // Hapus phonesToCompare
 
   @override
   State<BrandScreen> createState() => _BrandScreenState();
@@ -23,15 +22,7 @@ class BrandScreen extends StatefulWidget {
 class _BrandScreenState extends State<BrandScreen> {
   List<Map<String, dynamic>> items = [];
   bool loading = true;
-  String errorMessage = "";
-
-  String get baseUrl {
-    if (kIsWeb) {
-      return "http://localhost/api_hp/";
-    } else {
-      return "http://192.168.1.6/api_hp/";
-    }
-  }
+  String get baseUrl => ApiService.baseUrl;
 
   @override
   void initState() {
@@ -44,45 +35,43 @@ class _BrandScreenState extends State<BrandScreen> {
     try {
       final resp = await http.get(url);
       if (resp.statusCode == 200) {
-        final data = json.decode(resp.body);
-        if (!mounted) return;
         setState(() {
-          items = List<Map<String, dynamic>>.from(data);
+          items = List<Map<String, dynamic>>.from(json.decode(resp.body));
           loading = false;
         });
       } else {
-        if (!mounted) return;
-        setState(() {
-          errorMessage = "Gagal memuat data. Status: ${resp.statusCode}";
-          loading = false;
-        });
+        setState(() => loading = false);
       }
     } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        errorMessage = "Terjadi kesalahan koneksi: $e";
-        loading = false;
-      });
+      setState(() => loading = false);
     }
   }
 
   void _toggleSelectionAndRefresh(Map<String, dynamic> item) {
     ComparisonManager.toggleSelection(widget.brand, item['id'].toString());
     setState(() {});
-    if (ComparisonManager.selectedPhones.length > 3) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Maksimal 3 HP untuk dibandingkan")),
-      );
-    }
   }
 
   void _goToCompareScreen() {
+    // Konversi Map ke Model Smartphone
+    final selectedIds = ComparisonManager.selectedPhones
+        .map((e) => e['id'])
+        .toSet();
+    List<Smartphone> phonesToSend = items
+        .where((item) => selectedIds.contains(item['id'].toString()))
+        .map((item) => Smartphone.fromJson(item, widget.brand))
+        .toList();
+
+    if (phonesToSend.length < 2) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Pilih minimal 2 HP")));
+      return;
+    }
+
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) =>
-            CompareScreen(phonesToCompare: ComparisonManager.selectedPhones),
-      ),
+      MaterialPageRoute(builder: (_) => CompareScreen(phones: phonesToSend)),
     ).then((_) {
       ComparisonManager.clearSelection();
       setState(() {});
@@ -96,84 +85,31 @@ class _BrandScreenState extends State<BrandScreen> {
       appBar: AppBar(
         title: Text(widget.brand.toUpperCase()),
         actions: [
-          if (selectedCount > 0)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: Chip(
-                label: Text("$selectedCount Terpilih"),
-                backgroundColor: Colors.yellow[100],
-                labelStyle: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-            ),
           if (selectedCount >= 2)
             IconButton(
               icon: const Icon(Icons.compare_arrows),
               onPressed: _goToCompareScreen,
-              tooltip: "Bandingkan",
             ),
         ],
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : errorMessage.isNotEmpty
-          ? Center(child: Text(errorMessage))
           : ListView.builder(
-              padding: const EdgeInsets.all(8),
               itemCount: items.length,
               itemBuilder: (_, i) {
                 final it = items[i];
                 final isSelected = ComparisonManager.isSelected(
                   it['id'].toString(),
                 );
-                return Card(
-                  elevation: 3,
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 6,
-                    horizontal: 8,
-                  ),
-                  child: ListTile(
-                    leading: isSelected
-                        ? const Icon(Icons.check_circle, color: Colors.green)
-                        : const Icon(Icons.radio_button_unchecked),
-                    tileColor: isSelected ? Colors.blue.withOpacity(0.1) : null,
-                    contentPadding: const EdgeInsets.symmetric(
-                      vertical: 8,
-                      horizontal: 16,
-                    ),
-                    title: Text(it['nama_model'] ?? "Nama tidak ada"),
-                    subtitle: Text(it['price'] ?? "Harga tidak ada"),
-                    trailing: const Icon(Icons.phone_android),
-                    onTap: () => _toggleSelectionAndRefresh(it),
-                    onLongPress: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => DetailScreen(
-                            brand: widget.brand,
-                            id: it['id'].toString(),
-                            refreshCallback: fetchPhones,
-                          ),
-                        ),
-                      ).then((_) => fetchPhones());
-                    },
-                  ),
+                return ListTile(
+                  leading: isSelected
+                      ? const Icon(Icons.check_circle, color: Colors.green)
+                      : const Icon(Icons.circle_outlined),
+                  title: Text(it['nama_model'] ?? ""),
+                  onTap: () => _toggleSelectionAndRefresh(it),
                 );
               },
             ),
-      floatingActionButton: (UserSession.role == "admin")
-          ? FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CreatePhoneScreen(brand: widget.brand),
-                  ),
-                ).then((_) => fetchPhones());
-              },
-              tooltip: "Tambah HP Baru",
-              child: const Icon(Icons.add),
-            )
-          : null,
     );
   }
 }
