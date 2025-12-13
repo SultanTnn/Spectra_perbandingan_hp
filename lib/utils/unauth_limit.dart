@@ -1,16 +1,19 @@
+// FILE: lib/utils/unauth_limit.dart
+
 class UnauthComparisonLimit {
-  static int maxAttempts = 3;
+  // Batas maksimal 2 kali
+  static const int maxAttempts = 2;
   static int attemptsUsed = 0;
 
-  static int get remainingAttempts => maxAttempts - attemptsUsed;
-
-  static void useAttempt() {
+  static bool checkAndIncrement() {
     if (attemptsUsed < maxAttempts) {
       attemptsUsed++;
+      return true;
     }
+    return false;
   }
 
-  static bool isLimitReached() {
-    return attemptsUsed >= maxAttempts;
+  static void reset() {
+    attemptsUsed = 0;
   }
 }

@@ -15,9 +15,9 @@ class Smartphone {
   final String price;
   final String brand;
   final String imageUrl;
-  final String? purchaseUrl; 
-  final String? shopeeUrl; 
-  final String? tokopediaUrl; 
+  final String? purchaseUrl;
+  final String? shopeeUrl;
+  final String? tokopediaUrl;
 
   Smartphone({
     required this.id,
@@ -57,7 +57,8 @@ class Smartphone {
       finalImageUrl =
           "${ApiService.baseImageUrl}$normalizedBrandFolder/$rawImagePath";
     }
-    final String encodedUrl = Uri.encodeFull(finalImageUrl);
+    // Decode first to ensure we don't double encode if the DB already has %20
+    final String encodedUrl = Uri.encodeFull(Uri.decodeFull(finalImageUrl));
     String modelName = json['nama_model'] ?? '';
     String searchShopee =
         "https://shopee.co.id/search?keyword=$modelName $brand";
