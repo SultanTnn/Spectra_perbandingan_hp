@@ -37,3 +37,14 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/brands/apple.png
+    - assets/brands/huawei.png
+    - assets/brands/infinix.png
+    - assets/brands/itel.png
+    - assets/brands/oppo.png
+    - assets/brands/realme.png
+    - assets/brands/samsung.png
+    - assets/brands/tecno.png
+    - assets/brands/vivo.png
+    - assets/brands/xiaomi.png

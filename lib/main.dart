@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:sizer/sizer.dart';
-import 'package:google_fonts/google_fonts.dart'; 
+import 'package:google_fonts/google_fonts.dart';
 import 'screens/user/welcome_page.dart';
-import 'screens/home/settings/app_font.dart'; 
+import 'screens/home/screen_home.dart';
+import 'screens/home/settings/app_font.dart';
 import 'screens/home/settings/app_language.dart';
+import 'utils/session.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppFont.loadSettings(); 
+  await AppFont.loadSettings();
   await AppLanguage.loadLanguage();
+  await UserSession.loadData(); // Load session data dari SharedPreferences
 
   runApp(const MyApp());
 }
@@ -21,24 +24,21 @@ class MyApp extends StatelessWidget {
     // Sizer tetap di paling luar
     return Sizer(
       builder: (context, orientation, deviceType) {
-        
         //  Listener 1: Mendengarkan perubahan JENIS FONT
         return ValueListenableBuilder<String>(
           valueListenable: AppFont.fontNotifier,
           builder: (context, fontName, _) {
-            
             //  Listener 2: Mendengarkan perubahan UKURAN FONT
             return ValueListenableBuilder<double>(
               valueListenable: AppFont.fontSizeNotifier,
               builder: (context, fontSize, _) {
-                
-                // Menghitung skala font 
+                // Menghitung skala font
                 final double textScale = fontSize / 16.0;
 
                 return MaterialApp(
                   title: 'Perbandingan HP',
                   debugShowCheckedModeBanner: false,
-                  
+
                   //  Terapkan Tema dengan Font yang dipilih
                   theme: ThemeData(
                     primarySwatch: Colors.blue,
@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
                     useMaterial3: true,
                     // Mengganti font default aplikasi secara global
                     textTheme: GoogleFonts.getTextTheme(
-                      fontName, 
+                      fontName,
                       ThemeData.light().textTheme,
                     ),
                   ),
@@ -63,7 +63,10 @@ class MyApp extends StatelessWidget {
                     );
                   },
 
-                  home: const WelcomePage(),
+                  // Cek status login: jika sudah login, tampilkan HomeScreen, jika belum tampilkan WelcomePage
+                  home: UserSession.isLoggedIn
+                      ? const HomeScreen()
+                      : const WelcomePage(),
                 );
               },
             );

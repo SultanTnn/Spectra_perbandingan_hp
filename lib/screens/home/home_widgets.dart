@@ -65,6 +65,24 @@ class HomeWidgets {
     required this.startHintTimer,
   });
 
+  // STATIC HELPER: Mendapatkan path gambar brand
+  static String getBrandImagePath(String brandName) {
+    final brandLower = brandName.toLowerCase();
+    final brandMap = {
+      'samsung': 'assets/brands/samsung.png',
+      'realme': 'assets/brands/realme.png',
+      'oppo': 'assets/brands/oppo.png',
+      'vivo': 'assets/brands/vivo.png',
+      'xiaomi': 'assets/brands/xiaomi.png',
+      'tecno': 'assets/brands/tecno.png',
+      'infinix': 'assets/brands/infinix.png',
+      'itel': 'assets/brands/itel.png',
+      'apple': 'assets/brands/apple.png',
+      'huawei': 'assets/brands/huawei.png',
+    };
+    return brandMap[brandLower] ?? 'assets/brands/samsung.png';
+  }
+
   Widget buildLoadingShimmer({int count = 6, String title = 'Memuat Data...'}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,82 +360,130 @@ class HomeWidgets {
   }
 
   Widget buildBrandCard(String brand) {
+    final primaryColor = const Color(0xFF553C9A);
+    final secondaryColor = const Color(0xFF6C63FF);
+    final accentColor = const Color(0xFF0175C2);
+
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      margin: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: dynamicCardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: secondaryColor.withOpacity(0.15),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          // FIX: Menambahkan phonesToCompare: []
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
               builder: (_) => BrandScreen(brand: brand, phonesToCompare: []),
             ),
           ),
-          borderRadius: BorderRadius.circular(20),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-            child: Row(
-              children: [
-                Container(
-                  width: 55,
-                  height: 55,
-                  decoration: BoxDecoration(
-                    color: dynamicPrimary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Center(
-                    child: Text(
-                      brand.isNotEmpty ? brand[0].toUpperCase() : '?',
-                      style: TextStyle(
-                        color: dynamicPrimary,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.white, Colors.white.withOpacity(0.95)],
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: secondaryColor.withOpacity(0.1),
+                width: 1,
+              ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              child: Row(
+                children: [
+                  // Brand Logo Image
+                  Container(
+                    width: 65,
+                    height: 65,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: secondaryColor.withOpacity(0.2),
+                        width: 2,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Image.asset(
+                        HomeWidgets.getBrandImagePath(brand),
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback jika gambar tidak ditemukan
+                          return Center(
+                            child: Text(
+                              brand.isNotEmpty ? brand[0].toUpperCase() : '?',
+                              style: GoogleFonts.nunito(
+                                color: secondaryColor,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 18),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        brand,
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 17,
-                          color: brandTextColor,
+                  const SizedBox(width: 20),
+                  // Brand Info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          brand,
+                          style: GoogleFonts.nunito(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.grey[900],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        getTranslatedText('brand_detail_ketuk'),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: brandSubTextColor,
+                        const SizedBox(height: 6),
+                        Text(
+                          getTranslatedText('brand_detail_ketuk'),
+                          style: GoogleFonts.nunito(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  color: brandSubTextColor,
-                  size: 20,
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  // Arrow Icon dengan Background
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: secondaryColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: secondaryColor,
+                      size: 18,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 import 'home_widgets.dart';
 import '../auth/login_screen.dart';
+import '../user/welcome_page.dart';
 import '../../utils/session.dart';
 import '../profile_screen.dart';
 import '../../screens/home/settings/app_language.dart';
@@ -61,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen>
   Color _getShimmerHighlightColor() =>
       _isDarkModeActive ? Colors.grey.shade700 : Colors.grey.shade100;
 
-  static const String BASE_URL = 'http://192.168.1.6/api_hp';
+  static const String BASE_URL = 'http://192.168.1.7/api_hp';
 
   // Animasi Background Gradient
   late AnimationController _animationController;
@@ -285,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen>
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      MaterialPageRoute(builder: (_) => const WelcomePage()),
       (route) => false,
     );
   }

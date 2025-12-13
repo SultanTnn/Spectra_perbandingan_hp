@@ -5,9 +5,8 @@ import 'package:flutter_application_1/models/smartphone.dart';
 import 'dart:io' show Platform;
 
 class ApiService {
-
   // IP PC Anda (Host)
-  static const String _localHostIp = "http://192.168.1.6";
+  static const String _localHostIp = "http://192.168.1.7";
 
   static const String _apiFolder = "/api_hp/";
 
@@ -38,10 +37,9 @@ class ApiService {
     }
   }
 
-  
   // 3. DEFINISI ENDPOINT API & BASE URL GAMBAR
   static String get baseImageUrl {
-    // Contoh: http://192.168.1.6/api_hp/images/
+    // Contoh: http://192.168.1.7/api_hp/images/
     return "${baseUrl}images/";
   }
 
@@ -57,14 +55,14 @@ class ApiService {
   }
 
   // Properti untuk mendapatkan IP murni (digunakan di Smartphone.fromJson)
-  static String get baseIp => _localHostIp; 
+  static String get baseIp => _localHostIp;
 
   static String get login => "${baseUrl}login.php";
   static String get register => "${baseUrl}register.php";
   static String get getPhoneDetail => "${baseUrl}get_phone_detail.php";
   static String get updatePhone => "${baseUrl}update_phone.php";
   static String get getPhonesByBrand => "${baseUrl}get_phones_by_brand.php";
-  static String get createPhone => "${baseUrl}create_phone.php";
+  static String get createPhone => "${baseUrl}create_hp.php";
 
   // 4. FUNGSI FETCH DATA
   Future<List<Smartphone>> fetchPhonesByBrand(String brand) async {
