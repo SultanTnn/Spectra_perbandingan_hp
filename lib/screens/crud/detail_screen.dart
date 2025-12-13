@@ -47,7 +47,7 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> fetchDetail() async {
     final url = Uri.parse(
-      'http://192.168.43.60/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
+      'http://192.168.1.7/api_hp/get_detail.php?brand=${widget.brand}&id=${widget.id}',
     );
 
     try {

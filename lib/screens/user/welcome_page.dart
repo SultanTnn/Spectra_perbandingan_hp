@@ -734,8 +734,20 @@ class _WelcomePageState extends State<WelcomePage> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    CompareScreen(phones: _listUntukDibandingkan),
+                builder: (context) => CompareScreen(
+                  phonesToCompare: _listUntukDibandingkan
+                      .map((phone) => {
+                            'namaModel': phone.namaModel,
+                            'price': phone.price,
+                            'display': phone.display ?? '',
+                            'platform': phone.platform ?? '',
+                            'memory': phone.memory ?? '',
+                            'mainCamera': phone.mainCamera ?? '',
+                            'battery': phone.battery ?? '',
+                            'imageUrl': phone.imageUrl,
+                          })
+                      .toList(),
+                ),
               ),
             );
             return;
